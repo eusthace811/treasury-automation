@@ -2,12 +2,36 @@ import Link from 'next/link';
 import React, { memo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { CodeBlock } from './code-block';
 
 const components: Partial<Components> = {
   // @ts-expect-error
-  code: CodeBlock,
-  pre: ({ children }) => <>{children}</>,
+  code: ({ node, inline, className, children, ...props }) => {
+    if (!inline) {
+      // For code blocks, we need to handle them at the pre level to avoid nesting issues
+      return children;
+    } else {
+      return (
+        <code
+          className={`${className} text-sm bg-zinc-100 dark:bg-zinc-800 py-0.5 px-1 rounded-md`}
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    }
+  },
+  pre: ({ node, children, ...props }) => {
+    return (
+      <div className="not-prose flex flex-col">
+        <pre
+          {...props}
+          className="text-sm w-full overflow-x-auto dark:bg-zinc-900 p-4 border border-zinc-200 dark:border-zinc-700 rounded-xl dark:text-zinc-50 text-zinc-900"
+        >
+          <code className="whitespace-pre-wrap break-words">{children}</code>
+        </pre>
+      </div>
+    );
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>

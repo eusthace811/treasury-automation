@@ -20,24 +20,25 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: 'Pay our contractors every Friday',
+      label: 'if their invoice is approved',
+      action: 'Pay our contractors every Friday if their invoice is approved.',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
+      title: 'Send 10% of revenue above $50k',
+      label: `to our growth fund monthly`,
+      action: `Send 10% of revenue above $50k to our growth fund monthly.`,
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
-      action: `Help me write an essay about silicon valley`,
+      title: 'Split profits 60/40',
+      label: `between founders after expenses`,
+      action: `Split profits 60/40 between founders after expenses.`,
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
+      title: 'Transfer any funds left over from paying',
+      label: 'our vendors and rent into our reserve fund',
+      action:
+        'Transfer any funds left over from paying our vendors and rent into our reserve fund—unless that brings reserves above 200k, then skip.',
     },
   ];
 
