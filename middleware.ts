@@ -24,11 +24,12 @@ export async function middleware(request: NextRequest) {
   });
 
   if (!token) {
-    const redirectUrl = encodeURIComponent(request.url);
-
-    return NextResponse.redirect(
-      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
-    );
+    // Allow access to login and register pages without authentication
+    if (['/login', '/register'].includes(pathname)) {
+      return NextResponse.next();
+    }
+    // Redirect unauthenticated users to login page instead of auto-guest
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   const isGuest = guestRegex.test(token?.email ?? '');
@@ -52,8 +53,9 @@ export const config = {
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
+     * - images (static image assets)
      * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!_next/static|_next/image|images|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 };
