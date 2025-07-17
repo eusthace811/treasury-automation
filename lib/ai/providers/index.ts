@@ -12,5 +12,5 @@ const providers = {
 
 export const myProvider =
   providers[
-    (process.env.API_KEY_PROVIDER as keyof typeof providers) || 'deepseek'
+    (process.env.API_KEY_PROVIDER as keyof typeof providers) || 'openai'
   ];
