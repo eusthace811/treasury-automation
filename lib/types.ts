@@ -3,6 +3,10 @@ import type { getWeather } from './ai/tools/get-weather';
 import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
+import type { ruleParser } from './ai/tools/rule-parser';
+import type { ruleEvaluator } from './ai/tools/rule-evaluator';
+import type { ruleValidator } from './ai/tools/rule-validator';
+import type { ruleSaver } from './ai/tools/rule-saver';
 import type { InferUITool, UIMessage } from 'ai';
 
 import type { ArtifactKind } from '@/components/artifact';
@@ -22,12 +26,20 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
+type ruleParserTool = InferUITool<typeof ruleParser>;
+type ruleEvaluatorTool = InferUITool<typeof ruleEvaluator>;
+type ruleValidatorTool = InferUITool<typeof ruleValidator>;
+type ruleSaverTool = InferUITool<typeof ruleSaver>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
+  ruleParser: ruleParserTool;
+  ruleEvaluator: ruleEvaluatorTool;
+  ruleValidator: ruleValidatorTool;
+  ruleSaver: ruleSaverTool;
 };
 
 export type CustomUIDataTypes = {

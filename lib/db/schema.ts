@@ -168,3 +168,20 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const treasuryRule = pgTable('Treasury_Rule', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  name: varchar('name', { length: 255 }).notNull(),
+  original: text('original').notNull(),
+  ruleData: json('ruleData').notNull(),
+  isActive: boolean('isActive').notNull().default(true),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  memo: text('memo'),
+  deletedAt: timestamp('deletedAt'),
+});
+
+export type DBTreasuryRule = InferSelectModel<typeof treasuryRule>;

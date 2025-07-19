@@ -9,6 +9,8 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
+  isNull,
   lt,
   type SQL,
 } from 'drizzle-orm';
@@ -27,6 +29,8 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  treasuryRule,
+  type DBTreasuryRule,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -534,5 +538,166 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
       'bad_request:database',
       'Failed to get stream ids by chat id',
     );
+  }
+}
+
+export async function saveRule({
+  name,
+  original,
+  ruleData,
+  userId,
+  memo,
+}: {
+  name: string;
+  original: string;
+  ruleData: any;
+  userId: string;
+  memo?: string;
+}) {
+  try {
+    return await db
+      .insert(treasuryRule)
+      .values({
+        name,
+        original,
+        ruleData,
+        userId,
+        memo,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to save rule');
+  }
+}
+
+export async function editRule({
+  id,
+  userId,
+  name,
+  ruleData,
+  isActive,
+  memo,
+}: {
+  id: string;
+  userId: string;
+  name?: string;
+  ruleData?: any;
+  isActive?: boolean;
+  memo?: string;
+}) {
+  try {
+    const updateData: Partial<DBTreasuryRule> = {
+      updatedAt: new Date(),
+    };
+
+    if (name !== undefined) updateData.name = name;
+    if (ruleData !== undefined) updateData.ruleData = ruleData;
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (memo !== undefined) updateData.memo = memo;
+
+    return await db
+      .update(treasuryRule)
+      .set(updateData)
+      .where(
+        and(
+          eq(treasuryRule.id, id),
+          eq(treasuryRule.userId, userId),
+          isNull(treasuryRule.deletedAt)
+        )
+      )
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to edit rule');
+  }
+}
+
+export async function getRulesByUserId({ userId }: { userId: string }) {
+  try {
+    return await db
+      .select()
+      .from(treasuryRule)
+      .where(and(eq(treasuryRule.userId, userId), isNull(treasuryRule.deletedAt)))
+      .orderBy(desc(treasuryRule.createdAt));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get rules by user id',
+    );
+  }
+}
+
+export async function getRuleById({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}) {
+  try {
+    const [rule] = await db
+      .select()
+      .from(treasuryRule)
+      .where(
+        and(
+          eq(treasuryRule.id, id),
+          eq(treasuryRule.userId, userId),
+          isNull(treasuryRule.deletedAt)
+        )
+      );
+
+    return rule;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to get rule by id');
+  }
+}
+
+export async function deleteRuleById({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}) {
+  try {
+    return await db
+      .update(treasuryRule)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(treasuryRule.id, id),
+          eq(treasuryRule.userId, userId),
+          isNull(treasuryRule.deletedAt)
+        )
+      )
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to delete rule');
+  }
+}
+
+export async function restoreRuleById({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}) {
+  try {
+    return await db
+      .update(treasuryRule)
+      .set({ deletedAt: null, updatedAt: new Date() })
+      .where(
+        and(
+          eq(treasuryRule.id, id),
+          eq(treasuryRule.userId, userId),
+          isNotNull(treasuryRule.deletedAt)
+        )
+      )
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to restore rule');
   }
 }

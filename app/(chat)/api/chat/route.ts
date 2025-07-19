@@ -7,6 +7,7 @@ import {
   streamText,
 } from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
+import { getTracer } from '@lmnr-ai/lmnr';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
@@ -23,6 +24,13 @@ import { generateTitleFromUserMessage } from '../../actions';
 // import { updateDocument } from '@/lib/ai/tools/update-document';
 // import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 // import { getWeather } from '@/lib/ai/tools/get-weather';
+
+import { ruleParser } from '@/lib/ai/tools/rule-parser';
+import { ruleValidator } from '@/lib/ai/tools/rule-validator';
+import { ruleEvaluator } from '@/lib/ai/tools/rule-evaluator';
+import { ruleSaver } from '@/lib/ai/tools/rule-saver';
+import { ruleAnswer } from '@/lib/ai/tools/rule-answer';
+
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -98,7 +106,9 @@ export async function POST(request: Request) {
       differenceInHours: 24,
     });
 
-    if (Number(messageCount) > entitlementsByUserType[userType].maxMessagesPerDay) {
+    if (
+      Number(messageCount) > entitlementsByUserType[userType].maxMessagesPerDay
+    ) {
       return new ChatSDKError('rate_limit:chat').toResponse();
     }
 
@@ -155,11 +165,17 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(10),
+          toolChoice: 'required',
+          stopWhen: stepCountIs(12),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []
               : [
+                  'ruleParser',
+                  'ruleValidator',
+                  'ruleEvaluator',
+                  'ruleSaver',
+                  'ruleAnswer',
                   // 'getWeather',
                   // 'createDocument',
                   // 'updateDocument',
@@ -167,6 +183,11 @@ export async function POST(request: Request) {
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           tools: {
+            ruleParser,
+            ruleValidator,
+            ruleEvaluator,
+            ruleSaver,
+            ruleAnswer,
             // getWeather,
             // createDocument: createDocument({ session, dataStream }),
             // updateDocument: updateDocument({ session, dataStream }),
@@ -176,8 +197,9 @@ export async function POST(request: Request) {
             // }),
           },
           experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
+            isEnabled: true, //isProductionEnvironment,
             functionId: 'stream-text',
+            tracer: getTracer(),
           },
         });
 
