@@ -38,32 +38,46 @@ export const ruleEvaluator = tool({
     userId: z
       .string()
       .describe('User ID to fetch existing rules for comparison'),
+    excludeRuleId: z
+      .string()
+      .optional()
+      .describe('Rule ID to exclude from conflict check (for editing existing rules)'),
   }),
-  execute: async ({ rule, userId }) => {
+  execute: async ({ rule, userId, excludeRuleId }) => {
     try {
       // Fetch existing rules from database
-      const existingRules = await getRulesByUserId({ userId });
+      const allExistingRules = await getRulesByUserId({ userId });
+      
+      // Filter out the rule being edited if excludeRuleId is provided
+      const existingRules = excludeRuleId 
+        ? allExistingRules.filter(r => r.id !== excludeRuleId)
+        : allExistingRules;
 
       if (existingRules.length === 0) {
+        const message = excludeRuleId 
+          ? 'No other rules found - this rule can be updated without conflicts.'
+          : 'No existing rules found - this rule can be created without conflicts.';
+        
         return {
           success: true,
           data: {
             hasConflicts: false,
             conflictDetails: [],
-            suggestions: [
-              'No existing rules found - this rule can be created without conflicts.',
-            ],
+            suggestions: [message],
           },
         };
       }
 
       // Prepare conflict analysis prompt
-      const conflictPrompt = `Analyze the following NEW treasury rule for conflicts with EXISTING rules:
+      const isEditing = !!excludeRuleId;
+      const conflictPrompt = `Analyze the following ${isEditing ? 'UPDATED' : 'NEW'} treasury rule for conflicts with EXISTING rules:
 
-NEW RULE to check:
+${isEditing ? 'UPDATED' : 'NEW'} RULE to check:
 ${JSON.stringify(rule, null, 2)}
 
-EXISTING RULES in database:
+${isEditing ? `(Note: This is an update to an existing rule. The rule with ID ${excludeRuleId} has been excluded from conflict analysis.)` : ''}
+
+EXISTING RULES in database${isEditing ? ' (excluding the rule being edited)' : ''}:
 ${JSON.stringify(
   existingRules.map((r) => ({
     id: r.id,

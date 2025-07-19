@@ -17,27 +17,58 @@ export const ruleSaver = tool({
     name: z.string().describe('A descriptive name for the rule'),
     userId: z.string().describe('The ID of the user creating the rule'),
     memo: z.string().optional().describe('Optional human-readable description'),
+    ruleId: z.string().optional().describe('Rule ID for updating existing rule (if not provided, creates new rule)'),
   }),
-  execute: async ({ rule, name, userId, memo }) => {
+  execute: async ({ rule, name, userId, memo, ruleId }) => {
     try {
       const treasuryRuleData = rule as TreasuryRuleData;
 
-      // Save to database using proper query function
-      const [savedRule] = await saveRule({
-        name,
-        original: treasuryRuleData.original,
-        ruleData: treasuryRuleData,
-        userId,
-        memo,
-      });
+      if (ruleId) {
+        // Update existing rule
+        const [updatedRule] = await editRule({
+          id: ruleId,
+          userId,
+          name,
+          ruleData: treasuryRuleData,
+          memo,
+        });
 
-      return {
-        success: true,
-        data: {
-          ruleId: savedRule.id,
-          message: 'Treasury rule saved successfully',
-        },
-      };
+        if (!updatedRule) {
+          return {
+            success: false,
+            error: 'Rule not found or permission denied',
+          };
+        }
+
+        return {
+          success: true,
+          data: {
+            ruleId: updatedRule.id,
+            name: updatedRule.name,
+            message: 'Treasury rule updated successfully',
+            isUpdate: true,
+          },
+        };
+      } else {
+        // Create new rule
+        const [savedRule] = await saveRule({
+          name,
+          original: treasuryRuleData.original,
+          ruleData: treasuryRuleData,
+          userId,
+          memo,
+        });
+
+        return {
+          success: true,
+          data: {
+            ruleId: savedRule.id,
+            name: savedRule.name,
+            message: 'Treasury rule created successfully',
+            isUpdate: false,
+          },
+        };
+      }
     } catch (error) {
       return {
         success: false,

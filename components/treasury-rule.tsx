@@ -115,17 +115,22 @@ export function TreasuryRule({
           <div className="flex items-center gap-2">
             <PersonIcon className="h-4 w-4 text-green-600" />
             <span className="text-sm text-green-700">
-              Rule saved successfully
+              {(result.data as any).message || 'Rule saved successfully'}
             </span>
           </div>
-          {(result.data as any).id && (
+          {(result.data as any).ruleId && (
             <p className="text-xs text-green-600">
-              Rule ID: {(result.data as any).id}
+              Rule ID: {(result.data as any).ruleId}
             </p>
           )}
           {(result.data as any).name && (
             <p className="text-xs text-green-600">
               Rule Name: {(result.data as any).name}
+            </p>
+          )}
+          {(result.data as any).isUpdate !== undefined && (
+            <p className="text-xs text-blue-600">
+              {(result.data as any).isUpdate ? 'Updated existing rule' : 'Created new rule'}
             </p>
           )}
         </div>

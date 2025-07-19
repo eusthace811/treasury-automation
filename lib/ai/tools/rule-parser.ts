@@ -29,7 +29,7 @@ Instructions:
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "leftover" for remaining balance
 - payment.beneficiary: array of recipient addresses/identifiers
 - payment.amount: string amount or {type, value} object for dynamic amounts
-- payment.currency: currency symbol (USDC, ETH, etc.)
+- payment.currency: currency symbol ("USDC", "ETH", etc.)
 - payment.percentages: array of percentages (must sum to 100) if action is "split"
 - conditions: array of conditions that must be met
 - original: the exact original rule text
