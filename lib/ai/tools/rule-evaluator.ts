@@ -1,100 +1,109 @@
 import { tool } from 'ai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
-// import type { TreasuryRuleData } from '@/lib/treasury/schema';
+
+import { getRulesByUserId } from '@/lib/db/queries';
 import { chatModels } from '../models';
 import { myProvider } from '../providers';
 
-export const evaluationResultSchema = z.object({
-  analysis: z.string().describe('Comprehensive analysis of the rule'),
-  riskLevel: z
-    .enum(['low', 'medium', 'high'])
-    .describe('Overall risk assessment'),
-  suggestions: z
-    .array(z.string())
-    .describe('Actionable improvement suggestions'),
-  potentialIssues: z
-    .array(z.string())
-    .describe('Identified problems or concerns'),
-  optimizations: z
-    .array(z.string())
-    .describe('Performance and efficiency improvements'),
-  conflicts: z
-    .array(z.string())
-    .optional()
-    .describe('Conflicts with existing rules'),
-  securityConcerns: z
-    .array(z.string())
-    .describe('Security-related considerations'),
+export const conflictAnalysisSchema = z.object({
+  hasConflicts: z.boolean().describe('Whether conflicts were detected'),
+  conflictDetails: z
+    .array(
+      z.object({
+        ruleId: z.string().describe('ID of conflicting rule'),
+        ruleName: z.string().describe('Name of conflicting rule'),
+        conflictType: z
+          .enum(['schedule', 'payment', 'condition', 'beneficiary'])
+          .describe('Type of conflict detected'),
+        description: z
+          .string()
+          .describe('Detailed description of the conflict'),
+        severity: z
+          .enum(['low', 'medium', 'high'])
+          .describe('Severity of the conflict'),
+      }),
+    )
+    .describe('Detailed list of conflicts found'),
+  suggestions: z.array(z.string()).describe('Suggestions to resolve conflicts'),
 });
 
-export type EvaluationResult = z.infer<typeof evaluationResultSchema>;
+export type ConflictAnalysis = z.infer<typeof conflictAnalysisSchema>;
 
 export const ruleEvaluator = tool({
   description:
-    'Analyze and evaluate treasury rules for potential issues, optimizations, and improvements',
+    'Check for conflicts between a new treasury rule and existing rules in the database',
   inputSchema: z.object({
-    rule: z.any().describe('The parsed treasury rule to evaluate'),
-    existingRules: z
-      .array(z.object({}).passthrough())
-      .optional()
-      .describe('Array of existing rules to check for conflicts'),
+    rule: z.any().describe('The parsed treasury rule to check for conflicts'),
+    userId: z
+      .string()
+      .describe('User ID to fetch existing rules for comparison'),
   }),
-  execute: async ({ rule, existingRules = [] }) => {
+  execute: async ({ rule, userId }) => {
     try {
-      const evaluationPrompt = `Analyze the following treasury rule for potential issues, optimizations, and improvements:
+      // Fetch existing rules from database
+      const existingRules = await getRulesByUserId({ userId });
 
-Rule to analyze:
+      if (existingRules.length === 0) {
+        return {
+          success: true,
+          data: {
+            hasConflicts: false,
+            conflictDetails: [],
+            suggestions: [
+              'No existing rules found - this rule can be created without conflicts.',
+            ],
+          },
+        };
+      }
+
+      // Prepare conflict analysis prompt
+      const conflictPrompt = `Analyze the following NEW treasury rule for conflicts with EXISTING rules:
+
+NEW RULE to check:
 ${JSON.stringify(rule, null, 2)}
 
-${
-  existingRules.length > 0
-    ? `
-Existing rules to check for conflicts:
-${JSON.stringify(existingRules, null, 2)}
-`
-    : ''
-}
+EXISTING RULES in database:
+${JSON.stringify(
+  existingRules.map((r) => ({
+    id: r.id,
+    name: r.name,
+    ruleData: r.ruleData,
+    createdAt: r.createdAt,
+  })),
+  null,
+  2,
+)}
 
-Provide a comprehensive analysis covering:
+Analyze for the following types of conflicts:
 
-1. **Risk Assessment**: Evaluate the risk level (low/medium/high) based on:
-   - Amount and frequency of payments
-   - Complexity of conditions
-   - Potential for errors or misuse
-   - Security implications
+1. **Schedule Conflicts**: 
+   - Overlapping execution times for similar operations
+   - Competing cron schedules that might cause resource conflicts
+   - Hook triggers that could fire simultaneously
 
-2. **Potential Issues**: Identify any problems such as:
-   - Ambiguous conditions
-   - Missing edge case handling
-   - Timing conflicts
-   - Amount calculation issues
-   - Currency or precision problems
+2. **Payment Conflicts**:
+   - Same beneficiaries receiving duplicate payments
+   - Conflicting split percentages for the same revenue source
+   - Competing leftover distribution rules
 
-3. **Optimization Suggestions**: Recommend improvements for:
-   - Performance optimization
-   - Condition simplification
-   - Better error handling
-   - More efficient execution patterns
+3. **Condition Conflicts**:
+   - Contradictory conditions that could never be satisfied together
+   - Overlapping condition triggers for the same resources
+   - Mutually exclusive condition logic
 
-4. **Conflict Detection**: Check for conflicts with existing rules:
-   - Overlapping conditions
-   - Competing beneficiaries
-   - Resource conflicts
-   - Timing collisions
+4. **Beneficiary Conflicts**:
+   - Same beneficiary in multiple conflicting rules
+   - Percentage allocations that exceed 100% when combined
+   - Competing payment priorities to the same addresses
 
-5. **Security Considerations**: Assess security aspects:
-   - Authorization requirements
-   - Audit trail needs
-   - Data validation gaps
-   - Potential attack vectors
-
-Provide specific, actionable recommendations in structured format.`;
+Focus ONLY on actual conflicts that would cause problems, not just similarities.
+Provide specific, actionable suggestions to resolve any conflicts found.`;
 
       const result = await generateObject({
         model: myProvider.languageModel(chatModels[0]?.id),
-        prompt: evaluationPrompt,
-        schema: evaluationResultSchema,
+        prompt: conflictPrompt,
+        schema: conflictAnalysisSchema,
       });
 
       return {
@@ -105,7 +114,9 @@ Provide specific, actionable recommendations in structured format.`;
       return {
         success: false,
         error:
-          error instanceof Error ? error.message : 'Failed to evaluate rule',
+          error instanceof Error
+            ? error.message
+            : 'Failed to check rule conflicts',
       };
     }
   },

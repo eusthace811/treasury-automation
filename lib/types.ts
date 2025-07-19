@@ -7,6 +7,7 @@ import type { ruleParser } from './ai/tools/rule-parser';
 import type { ruleEvaluator } from './ai/tools/rule-evaluator';
 import type { ruleValidator } from './ai/tools/rule-validator';
 import type { ruleSaver } from './ai/tools/rule-saver';
+import type { ruleAnswer } from './ai/tools/rule-answer';
 import type { InferUITool, UIMessage } from 'ai';
 
 import type { ArtifactKind } from '@/components/artifact';
@@ -30,6 +31,7 @@ type ruleParserTool = InferUITool<typeof ruleParser>;
 type ruleEvaluatorTool = InferUITool<typeof ruleEvaluator>;
 type ruleValidatorTool = InferUITool<typeof ruleValidator>;
 type ruleSaverTool = InferUITool<typeof ruleSaver>;
+type ruleAnswerTool = InferUITool<typeof ruleAnswer>;
 
 export type ChatTools = {
   getWeather: weatherTool;
@@ -40,6 +42,7 @@ export type ChatTools = {
   ruleEvaluator: ruleEvaluatorTool;
   ruleValidator: ruleValidatorTool;
   ruleSaver: ruleSaverTool;
+  ruleAnswer: ruleAnswerTool;
 };
 
 export type CustomUIDataTypes = {

@@ -31,7 +31,7 @@ import { ruleEvaluator } from '@/lib/ai/tools/rule-evaluator';
 import { ruleSaver } from '@/lib/ai/tools/rule-saver';
 import { ruleAnswer } from '@/lib/ai/tools/rule-answer';
 
-import { isProductionEnvironment } from '@/lib/constants';
+// import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
@@ -137,6 +137,7 @@ export async function POST(request: Request) {
     const { longitude, latitude, city, country } = geolocation(request);
 
     const requestHints: RequestHints = {
+      userId: session.user.id,
       longitude,
       latitude,
       city,
@@ -165,7 +166,6 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
-          toolChoice: 'required',
           stopWhen: stepCountIs(12),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'

@@ -9,6 +9,7 @@ import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
+import { TreasuryRule } from './treasury-rule';
 import equal from 'fast-deep-equal';
 import { cn, sanitizeText } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -303,6 +304,117 @@ const PurePreviewMessage = ({
                         result={output}
                         isReadonly={isReadonly}
                       />
+                    </div>
+                  );
+                }
+              }
+
+              // Treasury Tool Handlers
+              if (type === 'tool-ruleParser') {
+                const { toolCallId, state } = part;
+
+                if (state === 'input-available') {
+                  const { input } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleParser" args={input} />
+                    </div>
+                  );
+                }
+
+                if (state === 'output-available') {
+                  const { output } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleParser" result={output} />
+                    </div>
+                  );
+                }
+              }
+
+              if (type === 'tool-ruleValidator') {
+                const { toolCallId, state } = part;
+
+                if (state === 'input-available') {
+                  const { input } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleValidator" args={input} />
+                    </div>
+                  );
+                }
+
+                if (state === 'output-available') {
+                  const { output } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleValidator" result={output} />
+                    </div>
+                  );
+                }
+              }
+
+              if (type === 'tool-ruleEvaluator') {
+                const { toolCallId, state } = part;
+
+                if (state === 'input-available') {
+                  const { input } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleEvaluator" args={input} />
+                    </div>
+                  );
+                }
+
+                if (state === 'output-available') {
+                  const { output } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleEvaluator" result={output} />
+                    </div>
+                  );
+                }
+              }
+
+              if (type === 'tool-ruleSaver') {
+                const { toolCallId, state } = part;
+
+                if (state === 'input-available') {
+                  const { input } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleSaver" args={input} />
+                    </div>
+                  );
+                }
+
+                if (state === 'output-available') {
+                  const { output } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleSaver" result={output} />
+                    </div>
+                  );
+                }
+              }
+
+              if (type === 'tool-ruleAnswer') {
+                const { toolCallId, state } = part;
+
+                if (state === 'input-available') {
+                  const { input } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleAnswer" args={input} />
+                    </div>
+                  );
+                }
+
+                if (state === 'output-available') {
+                  const { output } = part;
+                  return (
+                    <div key={toolCallId}>
+                      <TreasuryRule toolType="ruleAnswer" result={output} />
                     </div>
                   );
                 }

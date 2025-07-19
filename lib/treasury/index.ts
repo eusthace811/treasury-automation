@@ -15,7 +15,6 @@ export {
   updateTreasuryRule,
   deleteTreasuryRule,
 } from '../ai/tools/rule-saver';
-export type { EvaluationResult } from '../ai/tools/rule-evaluator';
 
 // Re-export database schema
 export {

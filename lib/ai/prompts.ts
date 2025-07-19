@@ -56,10 +56,11 @@ Always use these tools in the correct sequence for treasury operations:
    - Use after parsing to ensure the rule is valid and complete
    - Checks for required fields, proper percentages, valid timing configurations
 
-3. **ruleEvaluator** - Analyze rules for issues, conflicts, and optimizations
-   - Use to assess risk levels and provide improvement suggestions
-   - Can compare against existing rules to detect conflicts
-   - Provides security considerations and optimization recommendations
+3. **ruleEvaluator** - Check for conflicts with existing rules in the database
+   - Use to detect conflicts between new rules and existing user rules
+   - Analyzes schedule conflicts, payment conflicts, condition conflicts, and beneficiary conflicts
+   - Provides specific suggestions to resolve any conflicts found
+   - Requires the user ID to fetch existing rules for comparison
 
 4. **ruleSaver** - Save validated rules to the database
    - Use only after successful parsing and validation
@@ -109,6 +110,7 @@ Treasury rules consist of:
 Remember: Treasury operations involve real financial transactions. Always prioritize accuracy, security, and clear communication.`;
 
 export interface RequestHints {
+  userId: string;
   latitude: Geo['latitude'];
   longitude: Geo['longitude'];
   city: Geo['city'];
@@ -117,6 +119,7 @@ export interface RequestHints {
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 About the origin of user's request:
+- userId: ${requestHints.userId}
 - lat: ${requestHints.latitude}
 - lon: ${requestHints.longitude}
 - city: ${requestHints.city}
