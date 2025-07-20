@@ -70,7 +70,7 @@ export function formatCondition(condition: {
  * Format payment for human reading
  */
 export function formatPayment(payment: {
-  action: 'simple' | 'split' | 'leftover';
+  action: 'simple' | 'split' | 'calculation' | 'leftover';
   source: string;
   amount: any;
   currency: string;
@@ -87,14 +87,18 @@ export function formatPayment(payment: {
     if (amount.type === 'dynamic' && amount.value) {
       amountText = amount.value;
     } else if (amount.type === 'fixed' && amount.value) {
-      amountText = `${amount.value} ${currency}`;
+      amountText = `${amount.value}`;
+    } else if (amount.type === 'calculation' && amount.value) {
+      amountText = `calculated amount (${amount.value})`;
+    } else if (amount.type === 'percentage' && amount.value) {
+      amountText = `${amount.value}% of source balance`;
     } else if (amount.type === 'string' && amount.value) {
       amountText = amount.value === 'unspecified' ? 'the specified amount' : amount.value;
     } else {
       amountText = 'the amount';
     }
   } else if (typeof amount === 'number') {
-    amountText = `${amount} ${currency}`;
+    amountText = `${amount}`;
   } else {
     amountText = 'the amount';
   }
@@ -117,6 +121,10 @@ export function formatPayment(payment: {
         return `Split ${amountText} in ${currency} from ${source} between: ${splits}`;
       }
       return `Split ${amountText} in ${currency} from ${source} between ${beneficiaryText}`;
+    
+    case 'calculation':
+      // For calculation actions, show the detailed calculation formula
+      return `Calculate and pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
     
     case 'leftover':
       return `Distribute remaining ${currency} from ${source} to ${beneficiaryText}`;
