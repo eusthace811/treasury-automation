@@ -214,6 +214,30 @@ export async function getChatById({ id }: { id: string }) {
   }
 }
 
+export async function updateChatTitle({ id, title }: { id: string; title: string }) {
+  try {
+    const [updatedChat] = await db
+      .update(chat)
+      .set({ 
+        title: title.trim(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(chat.id, id), isNull(chat.deletedAt)))
+      .returning();
+    
+    if (!updatedChat) {
+      throw new ChatSDKError('not_found:chat', 'Chat not found or has been deleted');
+    }
+    
+    return updatedChat;
+  } catch (error) {
+    if (error instanceof ChatSDKError) {
+      throw error;
+    }
+    throw new ChatSDKError('bad_request:database', 'Failed to update chat title');
+  }
+}
+
 export async function saveMessages({
   messages,
 }: {

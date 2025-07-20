@@ -17,6 +17,7 @@ import {
   getMessagesByChatId,
   saveChat,
   saveMessages,
+  updateChatTitle,
 } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -140,6 +141,9 @@ export async function POST(request: Request) {
     const messagesFromDb = await getMessagesByChatId({ id });
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
+    // Get current chat data to include existing rule information
+    const currentChat = await getChatById({ id });
+
     const { longitude, latitude, city, country } = geolocation(request);
 
     const extraContext: ExtraContext = {
@@ -156,6 +160,9 @@ export async function POST(request: Request) {
       contractors: employeesData.contractors,
       invoices: invoicesData.invoices,
       treasury: treasuryData.treasury,
+      
+      // Add current chat rule data for editing scenarios
+      currentRule: currentChat?.ruleData || null,
     };
 
     await saveMessages({
@@ -284,4 +291,46 @@ export async function DELETE(request: Request) {
   const deletedChat = await deleteChatById({ id });
 
   return Response.json(deletedChat, { status: 200 });
+}
+
+export async function PATCH(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) {
+    return new ChatSDKError('bad_request:api').toResponse();
+  }
+
+  const session = await auth();
+
+  if (!session?.user) {
+    return new ChatSDKError('unauthorized:chat').toResponse();
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (error) {
+    return new ChatSDKError('bad_request:api', 'Invalid JSON body').toResponse();
+  }
+
+  const { title } = body;
+
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    return new ChatSDKError('bad_request:api', 'Title is required and must be a non-empty string').toResponse();
+  }
+
+  const chat = await getChatById({ id });
+
+  if (!chat) {
+    return new ChatSDKError('not_found:chat').toResponse();
+  }
+
+  if (chat.userId !== session.user.id) {
+    return new ChatSDKError('forbidden:chat').toResponse();
+  }
+
+  const updatedChat = await updateChatTitle({ id, title });
+
+  return Response.json(updatedChat, { status: 200 });
 }

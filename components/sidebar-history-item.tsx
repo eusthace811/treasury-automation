@@ -20,6 +20,7 @@ import {
   GlobeIcon,
   LockIcon,
   MoreHorizontalIcon,
+  PencilEditIcon,
   ShareIcon,
   TrashIcon,
 } from './icons';
@@ -30,11 +31,13 @@ const PureChatItem = ({
   chat,
   isActive,
   onDelete,
+  onRename,
   setOpenMobile,
 }: {
   chat: Chat;
   isActive: boolean;
   onDelete: (chatId: string) => void;
+  onRename: (chatId: string, currentTitle: string) => void;
   setOpenMobile: (open: boolean) => void;
 }) => {
   const { visibilityType, setVisibilityType } = useChatVisibility({
@@ -62,7 +65,7 @@ const PureChatItem = ({
         </DropdownMenuTrigger>
 
         <DropdownMenuContent side="bottom" align="end">
-          <DropdownMenuSub>
+          {/* <DropdownMenuSub>
             <DropdownMenuSubTrigger className="cursor-pointer">
               <ShareIcon />
               <span>Share</span>
@@ -97,7 +100,15 @@ const PureChatItem = ({
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
-          </DropdownMenuSub>
+          </DropdownMenuSub> */}
+
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => onRename(chat.id, chat.title)}
+          >
+            <PencilEditIcon />
+            <span>Rename</span>
+          </DropdownMenuItem>
 
           <DropdownMenuItem
             className="cursor-pointer text-destructive focus:bg-destructive/15 focus:text-destructive dark:text-red-500"
@@ -112,7 +123,5 @@ const PureChatItem = ({
   );
 };
 
-export const ChatItem = memo(PureChatItem, (prevProps, nextProps) => {
-  if (prevProps.isActive !== nextProps.isActive) return false;
-  return true;
-});
+// Temporarily disable memo to test if that's causing the issue
+export const ChatItem = PureChatItem;

@@ -16,6 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -110,6 +112,10 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameTitle, setRenameTitle] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
 
   const hasReachedEnd = paginatedChatHistories
     ? paginatedChatHistories.some((page) => page.hasMore === false)
@@ -145,6 +151,40 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
     if (deleteId === id) {
       router.push('/');
+    }
+  };
+
+  const handleRename = async () => {
+    if (!renameId || !renameTitle.trim() || isRenaming) return;
+
+    const trimmedTitle = renameTitle.trim();
+    setIsRenaming(true);
+
+    try {
+      const response = await fetch(`/api/chat?id=${renameId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: trimmedTitle }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rename chat');
+      }
+
+      // Force a complete revalidation to refresh the sidebar
+      await mutate();
+
+      toast.success('Chat renamed successfully');
+    } catch (error) {
+      console.error('Error renaming chat:', error);
+      toast.error('Failed to rename chat');
+    } finally {
+      setIsRenaming(false);
+      setShowRenameDialog(false);
+      setRenameTitle('');
+      setRenameId(null);
     }
   };
 
@@ -230,6 +270,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               setDeleteId(chatId);
                               setShowDeleteDialog(true);
                             }}
+                            onRename={(chatId, currentTitle) => {
+                              setRenameId(chatId);
+                              setRenameTitle(currentTitle);
+                              setShowRenameDialog(true);
+                            }}
                             setOpenMobile={setOpenMobile}
                           />
                         ))}
@@ -249,6 +294,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                             onDelete={(chatId) => {
                               setDeleteId(chatId);
                               setShowDeleteDialog(true);
+                            }}
+                            onRename={(chatId, currentTitle) => {
+                              setRenameId(chatId);
+                              setRenameTitle(currentTitle);
+                              setShowRenameDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
                           />
@@ -270,6 +320,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               setDeleteId(chatId);
                               setShowDeleteDialog(true);
                             }}
+                            onRename={(chatId, currentTitle) => {
+                              setRenameId(chatId);
+                              setRenameTitle(currentTitle);
+                              setShowRenameDialog(true);
+                            }}
                             setOpenMobile={setOpenMobile}
                           />
                         ))}
@@ -290,6 +345,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               setDeleteId(chatId);
                               setShowDeleteDialog(true);
                             }}
+                            onRename={(chatId, currentTitle) => {
+                              setRenameId(chatId);
+                              setRenameTitle(currentTitle);
+                              setShowRenameDialog(true);
+                            }}
                             setOpenMobile={setOpenMobile}
                           />
                         ))}
@@ -309,6 +369,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                             onDelete={(chatId) => {
                               setDeleteId(chatId);
                               setShowDeleteDialog(true);
+                            }}
+                            onRename={(chatId, currentTitle) => {
+                              setRenameId(chatId);
+                              setRenameTitle(currentTitle);
+                              setShowRenameDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
                           />
@@ -356,6 +421,49 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>
               Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showRenameDialog} onOpenChange={(open) => {
+        if (!isRenaming) {
+          setShowRenameDialog(open);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter a new title for this chat.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="chat-title" className="text-sm font-medium">
+              Chat Title
+            </Label>
+            <Input
+              id="chat-title"
+              value={renameTitle}
+              onChange={(e) => setRenameTitle(e.target.value)}
+              placeholder="Enter new chat title..."
+              className="mt-2"
+              disabled={isRenaming}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleRename();
+                }
+              }}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRenaming}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleRename}
+              disabled={!renameTitle.trim() || isRenaming}
+            >
+              {isRenaming ? 'Renaming...' : 'Rename'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

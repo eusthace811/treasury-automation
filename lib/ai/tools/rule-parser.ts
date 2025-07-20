@@ -12,14 +12,26 @@ export const ruleParser = tool({
     naturalLanguageRule: z
       .string()
       .describe('The natural language treasury rule to parse'),
+    existingRule: z
+      .any()
+      .optional()
+      .describe('Existing rule data for editing scenarios - preserve unchanged fields'),
   }),
-  execute: async ({ naturalLanguageRule }) => {
+  execute: async ({ naturalLanguageRule, existingRule }) => {
     try {
       const result = await generateObject({
         model: myProvider.languageModel(chatModels[0]?.id),
-        prompt: `Parse the following natural language treasury rule into a structured format:
+        prompt: `${existingRule ? 'UPDATE' : 'PARSE'} the following natural language treasury rule into a structured format:
 
 "${naturalLanguageRule}"
+
+${existingRule ? `
+EXISTING RULE DATA TO UPDATE:
+${JSON.stringify(existingRule, null, 2)}
+
+IMPORTANT: This is an UPDATE operation. Only modify the fields that the user specifically wants to change. 
+Preserve all other fields from the existing rule data exactly as they are.
+The user's request should be interpreted as modifications to the existing rule, not a complete replacement.` : ''}
 
 Instructions:
 - execution.timing: "once" for single execution, "schedule" for recurring, "hook" for event-based
@@ -29,13 +41,13 @@ Instructions:
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "leftover" for remaining balance
 - payment.beneficiary: array of recipient addresses/identifiers
 - payment.amount: string amount or {type, value} object for dynamic amounts
-- payment.currency: currency symbol ("USDC", "ETH", etc.)
+- payment.currency: currency symbol ("USDC", "ETH", etc.) - if not specified, preserve existing or default to "USDC"
 - payment.percentages: array of percentages (must sum to 100) if action is "split"
 - conditions: array of conditions that must be met
-- original: the exact original rule text
+- original: ${existingRule ? 'update this with the new user request' : 'the exact original rule text'}
 - memo: optional human-readable description
 
-Extract timing information, payment details, conditions, and any other relevant information.
+${existingRule ? 'PRESERVE all existing field values unless the user specifically requests changes to those fields.' : 'Extract timing information, payment details, conditions, and any other relevant information.'}
 Be precise with amounts, percentages, and conditions.`,
         schema: treasuryRuleSchema,
       });

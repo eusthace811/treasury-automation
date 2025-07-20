@@ -34,12 +34,12 @@ export interface Contractor {
   deletedAt: number | null;
 }
 
-export interface EmployeesData {
+export interface BeneficiariesData {
   employees: Employee[];
   contractors: Contractor[];
 }
 
-export const employeesData: EmployeesData = {
+export const beneficiariesData: BeneficiariesData = {
   employees: [
     {
       id: "3e6d37fa-3ef2-4059-bc34-f51ebf083f20",

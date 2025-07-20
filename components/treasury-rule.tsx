@@ -13,6 +13,7 @@ import {
 
 // Import the actual types from the schema
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
+import { cronToHuman, formatCondition, formatPayment } from '@/lib/utils/cron';
 
 // // Define the actual tool response types based on the implementations
 // type ToolResult = {
@@ -153,31 +154,37 @@ function TreasuryRuleDisplay({ rule }: { rule: TreasuryRuleData }) {
     <div className="space-y-3 text-sm">
       <div className="flex items-start gap-2">
         <ClockIcon className="h-4 w-4 text-blue-600 mt-0.5" />
-        <div>
+        <div className="flex-1">
           <span className="font-medium text-gray-800">Execution: </span>
-          <span className="text-gray-700">
-            {rule.execution.timing === 'once' &&
-              `One-time execution${rule.execution.at ? ` at ${new Date(rule.execution.at * 1000).toLocaleString()}` : ''}`}
-            {rule.execution.timing === 'schedule' &&
-              `Scheduled: ${rule.execution.cron}`}
-            {rule.execution.timing === 'hook' &&
-              `Webhook: ${rule.execution.hooks?.map((h) => h.target).join(', ')}`}
-          </span>
+          <div className="text-gray-700">
+            {rule.execution.timing === 'once' && (
+              <span>One-time execution{rule.execution.at ? ` at ${new Date(rule.execution.at * 1000).toLocaleString()}` : ''}</span>
+            )}
+            {rule.execution.timing === 'schedule' && (
+              <div>
+                <div className="font-medium text-gray-600">{cronToHuman(rule.execution.cron || '')}</div>
+                <div className="text-xs text-gray-500 mt-1">Schedule: {rule.execution.cron}</div>
+              </div>
+            )}
+            {rule.execution.timing === 'hook' && (
+              <span>Webhook: {rule.execution.hooks?.map((h) => h.target).join(', ')}</span>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="flex items-start gap-2">
         <PersonIcon className="h-4 w-4 text-green-600 mt-0.5" />
-        <div>
+        <div className="flex-1">
           <span className="font-medium text-gray-800">Payment: </span>
-          <span className="text-gray-700">
-            {rule.payment.action === 'simple' &&
-              `${typeof rule.payment.amount === 'string' ? rule.payment.amount : JSON.stringify(rule.payment.amount)} ${rule.payment.currency} to ${rule.payment.beneficiary.join(', ')}`}
-            {rule.payment.action === 'split' &&
-              `Split payment across ${rule.payment.beneficiary.length} recipients`}
-            {rule.payment.action === 'leftover' &&
-              `Leftover distribution to ${rule.payment.beneficiary.join(', ')}`}
-          </span>
+          <div className="text-gray-700">
+            <div className="font-medium text-gray-800">
+              {formatPayment(rule.payment)}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Action: {rule.payment.action} | Currency: {rule.payment.currency}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -194,12 +201,26 @@ function TreasuryRuleDisplay({ rule }: { rule: TreasuryRuleData }) {
       {rule.conditions && rule.conditions.length > 0 && (
         <div className="flex items-start gap-2">
           <InfoCircledIcon className="h-4 w-4 text-purple-600 mt-0.5" />
-          <div>
+          <div className="flex-1">
             <span className="font-medium text-gray-800">Conditions: </span>
-            <span className="text-gray-700">
-              {rule.conditions.length} condition
-              {rule.conditions.length > 1 ? 's' : ''} defined
-            </span>
+            <div className="text-gray-700">
+              <div className="mb-1">
+                {rule.conditions.length} condition
+                {rule.conditions.length > 1 ? 's' : ''} defined
+              </div>
+              <div className="space-y-1">
+                {rule.conditions.map((condition, index) => (
+                  <div key={index} className="text-sm bg-purple-50 p-2 rounded border-l-2 border-purple-200">
+                    <span className="text-purple-800">
+                      {condition.logic && index > 0 && (
+                        <span className="font-medium text-purple-600">{condition.logic} </span>
+                      )}
+                      {formatCondition(condition)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

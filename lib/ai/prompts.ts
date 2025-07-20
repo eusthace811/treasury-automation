@@ -112,11 +112,13 @@ Treasury rules consist of:
 
 When a user wants to edit/modify/update an existing treasury rule:
 1. **Identify the rule**: Determine which rule they want to edit (by name, ID, or description)
-2. **Parse the changes**: Use ruleParser to parse the updated rule requirements
+2. **Parse the changes**: Use ruleParser with BOTH the user's modification request AND the existing rule data from extraContext.chatId to preserve unchanged fields
 3. **Validate**: Use ruleValidator to ensure the updated rule is valid
 4. **Check conflicts**: Use ruleEvaluator with excludeRuleId set to the current chatId to exclude the rule being edited
 5. **Save changes**: Use ruleUpdater to update the current chat rule
 6. **Summarize**: Use ruleAnswer to provide a summary of the update process
+
+CRITICAL FOR EDITING: Always pass the existing rule data to ruleParser.existingRule parameter to preserve currency, amounts, and other unchanged fields.
 
 ## Important
 - If the user does not specify a currency, default to "USDC".
@@ -146,6 +148,9 @@ export interface ExtraContext {
   contractors: Contractor[];
   invoices: Invoice[];
   treasury: Treasury;
+  
+  // Current chat rule data for editing scenarios
+  currentRule: any | null;
 }
 
 export const getExtraContext = (extraContext: ExtraContext) => `\
@@ -157,7 +162,15 @@ export const getExtraContext = (extraContext: ExtraContext) => `\
 - city: ${extraContext.city}
 - country: ${extraContext.country}
 
+${extraContext.currentRule ? `
+## CURRENT CHAT RULE DATA:
+This chat has an existing treasury rule. When editing, pass this data to ruleParser.existingRule parameter:
+${JSON.stringify(extraContext.currentRule, null, 2)}
+` : '## CURRENT CHAT RULE DATA:\nThis chat has no existing treasury rule.'}
+
 ## Business Context:
+
+List of official accounts, beneficiaries (employees and contractors), pending invoices, and a current treasury snapshot. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
 
 - ACCOUNTS:
 ${extraContext.accounts.map(account => 
