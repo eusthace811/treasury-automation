@@ -43,8 +43,8 @@ export function cronToHuman(cron: string): string {
   }
 
   // Fallback for common time patterns
-  if (parts.length >= 5) {
-    const [sec, min, hr, dom, mon, dow] = parts;
+  if (parts.length === 5) {
+    const [min, hr, dom, mon, dow] = parts;
     
     // Try to build a human description
     let result = 'Runs ';
@@ -132,12 +132,13 @@ export function formatCondition(condition: {
  */
 export function formatPayment(payment: {
   action: 'simple' | 'split' | 'leftover';
+  source: string;
   amount: any;
   currency: string;
   beneficiary: string[];
   percentages?: number[];
 }): string {
-  const { action, amount, currency, beneficiary } = payment;
+  const { action, source, amount, currency, beneficiary } = payment;
   
   // Format amount
   let amountText = '';
@@ -169,19 +170,19 @@ export function formatPayment(payment: {
   // Format based on action type
   switch (action) {
     case 'simple':
-      return `Pay ${amountText} in ${currency} to ${beneficiaryText}`;
+      return `Pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
     
     case 'split':
       if (payment.percentages && payment.percentages.length === beneficiary.length) {
         const splits = beneficiary.map((b, i) => `${b} (${payment.percentages![i]}%)`).join(', ');
-        return `Split ${amountText} in ${currency} between: ${splits}`;
+        return `Split ${amountText} in ${currency} from ${source} between: ${splits}`;
       }
-      return `Split ${amountText} in ${currency} between ${beneficiaryText}`;
+      return `Split ${amountText} in ${currency} from ${source} between ${beneficiaryText}`;
     
     case 'leftover':
-      return `Distribute remaining ${currency} to ${beneficiaryText}`;
+      return `Distribute remaining ${currency} from ${source} to ${beneficiaryText}`;
     
     default:
-      return `Pay ${amountText} in ${currency} to ${beneficiaryText}`;
+      return `Pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
   }
 }

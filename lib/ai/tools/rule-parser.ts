@@ -41,15 +41,17 @@ The user's request should be interpreted as modifications to the existing rule, 
 
 Instructions:
 - execution.timing: "once" for single execution, "schedule" for recurring, "hook" for event-based
-- execution.at: UNIX timestamp if timing is "once"
+- execution.at: UNIX timestamp (future timestamp) if timing is "once" - use Math.floor(Date.now() / 1000) + delay_in_seconds
 - execution.cron: standard 5-field UNIX cron expression (minute hour day month weekday) when timing is "schedule" - do NOT include seconds field
 - execution.hooks: array of {type, target} if timing is "hook"
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "leftover" for remaining balance
+- payment.source: REQUIRED - where the money comes from. Available accounts: "Operating Account", "Reserve Fund", "Sales Revenue", "Profit Sharing Pool", "Payroll Processing", "Growth Investment Fund" or wallet addresses
 - payment.beneficiary: Array of recipient identifiers - internal accounts, employee/contractor names, wallet addresses, or collection names for multiple recipients (use context for available accounts and beneficiaries)
 - payment.amount: string amount or {type, value} object for dynamic amounts
 - payment.currency: currency symbol ("USDC", "ETH", etc.) - if not specified, preserve existing or default to "USDC"
 - payment.percentages: array of percentages (must sum to 100) if action is "split"
 - conditions: array of conditions that must be met
+- conditions.source: data collection to query ("accounts", "employees", "treasury") - NOT the payment source
 - original: ${existingRule ? 'update this with the new user request' : 'the exact original rule text'}
 - memo: optional human-readable description
 

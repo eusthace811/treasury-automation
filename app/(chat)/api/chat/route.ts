@@ -149,6 +149,7 @@ export async function POST(request: Request) {
     const extraContext: ExtraContext = {
       userId: session.user.id,
       chatId: id,
+      currentTime: new Date().toISOString(),
       longitude,
       latitude,
       city,

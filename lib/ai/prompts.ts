@@ -137,6 +137,7 @@ Remember: Treasury operations involve real financial transactions. Always priori
 export interface ExtraContext {
   userId: string;
   chatId: string;
+  currentTime: string;
   latitude: Geo['latitude'];
   longitude: Geo['longitude'];
   city: Geo['city'];
@@ -157,6 +158,7 @@ export const getExtraContext = (extraContext: ExtraContext) => `\
 ## About the origin of user's request:
 - userId: ${extraContext.userId}
 - chatId: ${extraContext.chatId}
+- currentTime: ${extraContext.currentTime}
 - lat: ${extraContext.latitude}
 - lon: ${extraContext.longitude}
 - city: ${extraContext.city}

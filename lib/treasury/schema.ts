@@ -5,25 +5,34 @@ export const hookSchema = z.object({
   target: z.string(),
 });
 
-export const executionSchema = z.object({
-  timing: z.enum(['once', 'schedule', 'hook']),
-  at: z.number().optional(),
-  cron: z.string().optional(),
-  hooks: z.array(hookSchema).optional(),
-}).refine((data) => {
-  if (data.timing === 'once' && !data.at) {
-    return false;
-  }
-  if (data.timing === 'schedule' && !data.cron) {
-    return false;
-  }
-  if (data.timing === 'hook' && (!data.hooks || data.hooks.length === 0)) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Required fields missing for timing type",
-});
+export const executionSchema = z
+  .object({
+    timing: z.enum(['once', 'schedule', 'hook']),
+    at: z.number().optional(),
+    cron: z.string().optional(),
+    hooks: z.array(hookSchema).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.timing === 'once') {
+        if (!data.at) return false;
+        const isValidTimestamp = !Number.isNaN(
+          new Date(data.at * 1000).getTime(),
+        );
+        return isValidTimestamp;
+      }
+      if (data.timing === 'schedule' && !data.cron) {
+        return false;
+      }
+      if (data.timing === 'hook' && (!data.hooks || data.hooks.length === 0)) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Required fields missing for timing type',
+    },
+  );
 
 export const amountSchema = z.union([
   z.string(),
@@ -33,24 +42,34 @@ export const amountSchema = z.union([
   }),
 ]);
 
-export const paymentSchema = z.object({
-  action: z.enum(['simple', 'split', 'leftover']),
-  beneficiary: z.array(z.string()).min(1),
-  amount: amountSchema,
-  currency: z.string(),
-  percentages: z.array(z.number()).optional(),
-}).refine((data) => {
-  if (data.action === 'split') {
-    if (!data.percentages || data.percentages.length !== data.beneficiary.length) {
-      return false;
-    }
-    const sum = data.percentages.reduce((acc, pct) => acc + pct, 0);
-    return Math.abs(sum - 100) < 0.01; // Allow for floating point precision
-  }
-  return true;
-}, {
-  message: "Split payments require percentages that sum to 100 and match beneficiary count",
-});
+export const paymentSchema = z
+  .object({
+    action: z.enum(['simple', 'split', 'leftover']),
+    source: z.string().min(1, 'Payment source is required'),
+    beneficiary: z.array(z.string()).min(1),
+    amount: amountSchema,
+    currency: z.string(),
+    percentages: z.array(z.number()).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.action === 'split') {
+        if (
+          !data.percentages ||
+          data.percentages.length !== data.beneficiary.length
+        ) {
+          return false;
+        }
+        const sum = data.percentages.reduce((acc, pct) => acc + pct, 0);
+        return Math.abs(sum - 100) < 0.01; // Allow for floating point precision
+      }
+      return true;
+    },
+    {
+      message:
+        'Split payments require percentages that sum to 100 and match beneficiary count',
+    },
+  );
 
 export const conditionSchema = z.object({
   source: z.string(),
