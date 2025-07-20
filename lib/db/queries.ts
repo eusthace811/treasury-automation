@@ -114,6 +114,7 @@ export async function deleteChatById({ id }: { id: string }) {
       .set({ 
         deletedAt: new Date(),
         isActive: false, // Deactivate any treasury rule
+        scheduleId: null, // Clear the schedule ID
       })
       .where(eq(chat.id, id))
       .returning();

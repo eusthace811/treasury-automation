@@ -34,6 +34,7 @@ export const chat = pgTable('Chat', {
   ruleData: json('ruleData'), // Parsed treasury rule structure
   isActive: boolean('isActive').default(false), // Rule execution status
   memo: text('memo'), // Optional rule notes
+  scheduleId: text('scheduleId'), // QStash schedule ID for rule execution
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   deletedAt: timestamp('deletedAt'), // Soft delete timestamp
 });

@@ -4,19 +4,17 @@
 export function cronToHuman(cron: string): string {
   const parts = cron.trim().split(/\s+/);
   
-  // Handle different cron formats
-  if (parts.length < 5 || parts.length > 7) {
+  // Handle Unix cron format (5 fields)
+  if (parts.length !== 5) {
     return `Custom schedule: ${cron}`;
   }
 
-  const [second, minute, hour, dayOfMonth, month, dayOfWeek, year] = parts;
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
 
   // Common patterns
   const patterns = [
-    // Every Friday patterns
-    { pattern: /^0 0 12 \? \* FRI \*$/, description: 'Every Friday at 12:00 PM' },
-    { pattern: /^0 0 12 \? \* 6 \*$/, description: 'Every Friday at 12:00 PM' },
-    { pattern: /^0 0 12 \? \* 5$/, description: 'Every Friday at 12:00 PM' },
+    // Every Friday patterns (5-field Unix cron)
+    { pattern: /^0 12 \* \* 5$/, description: 'Every Friday at 12:00 PM' },
     { pattern: /^0 0 \* \* 5$/, description: 'Every Friday at midnight' },
     
     // Every Monday

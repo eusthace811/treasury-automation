@@ -37,7 +37,61 @@ export const ruleUpdater = (chatId: string) =>
       try {
         const treasuryRuleData = rule as TreasuryRuleData;
 
-        // Update the chat with rule data
+        // Get current chat data to check for existing schedule
+        const currentChat = await db
+          .select()
+          .from(chat)
+          .where(and(eq(chat.id, chatId), isNull(chat.deletedAt)))
+          .limit(1);
+
+        if (!currentChat.length) {
+          return {
+            success: false,
+            error: 'Chat not found or has been deleted',
+          };
+        }
+
+        const existingScheduleId = currentChat[0].scheduleId;
+
+        // Cancel existing schedule if we're editing a rule that has one
+        if (existingScheduleId) {
+          try {
+            await qstashClient.schedules.delete(existingScheduleId);
+            console.log('Cancelled existing schedule:', existingScheduleId);
+          } catch (error) {
+            console.warn(
+              'Failed to cancel existing schedule:',
+              existingScheduleId,
+              error,
+            );
+            // Continue with the update even if cancellation fails
+          }
+        }
+
+        // Create new QStash schedule for rule execution
+        let newScheduleId: any;
+        if (
+          treasuryRuleData.execution.timing === 'schedule' &&
+          treasuryRuleData.execution.cron
+        ) {
+          try {
+            newScheduleId = await qstashClient.schedules.create({
+              destination: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
+              headers: {
+                'Content-type': 'application/json',
+                'Upstash-Deduplication-Id': chatId,
+              },
+              body: JSON.stringify({ chatId, ruleData: treasuryRuleData }),
+              cron: treasuryRuleData.execution.cron,
+            });
+            console.log('Created QStash schedule ID:', newScheduleId);
+          } catch (error) {
+            console.error('Failed to create QStash schedule:', error);
+            // Continue without schedule - rule will be saved but not scheduled
+          }
+        }
+
+        // Update the chat with rule data and schedule ID
         const [updated] = await db
           .update(chat)
           .set({
@@ -46,6 +100,7 @@ export const ruleUpdater = (chatId: string) =>
             ruleData: treasuryRuleData, // Always update rule structure
             memo: memo || null,
             isActive: true, // Rule is active when saved
+            scheduleId: newScheduleId.scheduleId, // Store the QStash schedule ID
             updatedAt: new Date(),
           })
           .where(and(eq(chat.id, chatId), isNull(chat.deletedAt))) // Only update non-deleted chats
@@ -58,17 +113,6 @@ export const ruleUpdater = (chatId: string) =>
           };
         }
 
-        // Schedule rule execution using QStash
-        const scheduleId = await qstashClient.schedules.create({
-          destination: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
-          headers: {
-            'Content-type': 'application/json',
-          },
-          body: JSON.stringify({ chatId }),
-          cron: treasuryRuleData.execution.cron ?? '',
-        });
-        console.log('QStash schedule ID:', scheduleId);
-
         return {
           success: true,
           data: {
@@ -77,6 +121,8 @@ export const ruleUpdater = (chatId: string) =>
             message: 'Treasury rule updated successfully in chat',
             ruleData: updated.ruleData,
             isActive: updated.isActive,
+            scheduleId: updated.scheduleId,
+            scheduled: !!newScheduleId,
           },
         };
       } catch (error) {

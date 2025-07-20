@@ -1,11 +1,11 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
-import type { 
-  Account, 
-  Employee, 
-  Contractor, 
-  Invoice, 
-  Treasury 
+import type {
+  Account,
+  Employee,
+  Contractor,
+  Invoice,
+  Treasury,
 } from '@/data/mockup';
 
 export const artifactsPrompt = `
@@ -141,14 +141,14 @@ export interface ExtraContext {
   longitude: Geo['longitude'];
   city: Geo['city'];
   country: Geo['country'];
-  
+
   // Business context from mockup data
   accounts: Account[];
   employees: Employee[];
   contractors: Contractor[];
   invoices: Invoice[];
   treasury: Treasury;
-  
+
   // Current chat rule data for editing scenarios
   currentRule: any | null;
 }
@@ -162,35 +162,52 @@ export const getExtraContext = (extraContext: ExtraContext) => `\
 - city: ${extraContext.city}
 - country: ${extraContext.country}
 
-${extraContext.currentRule ? `
+${
+  extraContext.currentRule
+    ? `
 ## CURRENT CHAT RULE DATA:
 This chat has an existing treasury rule. When editing, pass this data to ruleParser.existingRule parameter:
 ${JSON.stringify(extraContext.currentRule, null, 2)}
-` : '## CURRENT CHAT RULE DATA:\nThis chat has no existing treasury rule.'}
+`
+    : '## CURRENT CHAT RULE DATA:\nThis chat has no existing treasury rule.'
+}
 
 ## Business Context:
 
 List of official accounts, beneficiaries (employees and contractors), pending invoices, and a current treasury snapshot. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
 
 - ACCOUNTS:
-${extraContext.accounts.map(account => 
-  `- ${account.name} (${account.currency}): ${account.balance.toLocaleString()} - ${account.description}`
-).join('\n')}
+${extraContext.accounts
+  .map(
+    (account) =>
+      `- ${account.name} (${account.currency}): ${account.balance.toLocaleString()} - ${account.description}`,
+  )
+  .join('\n')}
 
 - EMPLOYEES:
-${extraContext.employees.map(emp => 
-  `- ${emp.name} (${emp.role}, ${emp.department}) - ${emp.currency} ${emp.salary.toLocaleString()}/${emp.payFrequency}`
-).join('\n')}
+${extraContext.employees
+  .map(
+    (emp) =>
+      `- ${emp.name} (${emp.role}, ${emp.department}) - ${emp.currency} ${emp.salary.toLocaleString()}/${emp.payFrequency}`,
+  )
+  .join('\n')}
 
 - CONTRACTORS:
-${extraContext.contractors.map(contractor => 
-  `- ${contractor.name} (${contractor.specialty}) - ${contractor.currency} ${contractor.hourlyRate}/hour`
-).join('\n')}
+${extraContext.contractors
+  .map(
+    (contractor) =>
+      `- ${contractor.name} (${contractor.specialty}) - ${contractor.currency} ${contractor.hourlyRate}/hour`,
+  )
+  .join('\n')}
 
 - PENDING INVOICES:
-${extraContext.invoices.filter(inv => inv.status === 'unpaid').map(invoice => 
-  `- ${invoice.vendorName}: ${invoice.currency} ${invoice.amount.toLocaleString()} - ${invoice.description} (${invoice.approved ? 'Approved' : 'Pending Approval'})`
-).join('\n')}
+${extraContext.invoices
+  .filter((inv) => inv.status === 'unpaid')
+  .map(
+    (invoice) =>
+      `- ${invoice.vendorName}: ${invoice.currency} ${invoice.amount.toLocaleString()} - ${invoice.description} (${invoice.approved ? 'Approved' : 'Pending Approval'})`,
+  )
+  .join('\n')}
 
 - TREASURY SNAPSHOT:
 - Company: ${extraContext.treasury.name}
@@ -214,7 +231,7 @@ export const systemPrompt = ({
   // } else {
   //   return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
   // }
-  console.log(`-- systemPrompt --:\n`, selectedChatModel, JSON.stringify(prompt, null, 4));
+  // console.log(`-- systemPrompt --:\n`, selectedChatModel, JSON.stringify(prompt, null, 4));
   return prompt;
 };
 
