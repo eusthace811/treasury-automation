@@ -178,11 +178,36 @@ ${JSON.stringify(extraContext.currentRule, null, 2)}
 
 List of official accounts, beneficiaries (employees and contractors), pending invoices, and a current treasury snapshot. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
 
+### AVAILABLE FIELD NAMES FOR CONDITIONS:
+
+**ACCOUNTS fields (source: "accounts"):**
+id, name, type, address, chainId, currency, balance, createdAt, updatedAt, deletedAt, description, isActive
+
+**EMPLOYEES fields (source: "employees"):**
+id, name, email, role, department, payrollAddress, salary, currency, payFrequency, startDate, isActive, isFounder, equityPercent, createdAt, updatedAt, deletedAt
+
+**CONTRACTORS fields (source: "contractors"):**
+id, name, email, specialty, paymentAddress, hourlyRate, currency, maxHoursPerWeek, contractStart, contractEnd, isActive, tags, createdAt, updatedAt, deletedAt
+
+**INVOICES fields (source: "invoices"):**
+id, vendorName, vendorAddress, amount, currency, description, category, dueDate, invoiceDate, approved, approvedBy, approvedAt, priority, recurring, recurringFrequency, tags, status
+
+**TREASURY fields (source: "treasury"):**
+name, snapshot.currentMonth.revenue, snapshot.currentMonth.expenses, snapshot.currentMonth.burnRate, snapshot.currentMonth.runway
+
+**Example condition usage:**
+- Check account balance: \`{"source": "accounts", "field": "balance", "operator": ">", "value": 50000}\`
+- Check if employee is active: \`{"source": "employees", "field": "isActive", "operator": "==", "value": true}\`
+- Check invoice amount: \`{"source": "invoices", "field": "amount", "operator": ">=", "value": 1000}\`
+- Check revenue threshold: \`{"source": "treasury", "field": "snapshot.currentMonth.revenue", "operator": ">", "value": 100000}\`
+
+### DATA LISTINGS:
+
 - ACCOUNTS:
 ${extraContext.accounts
   .map(
     (account) =>
-      `- ${account.name} (${account.currency}): ${account.balance.toLocaleString()} - ${account.description}`,
+      `- name: "${account.name}" | currency: "${account.currency}" | balance: ${account.balance} | description: "${account.description}" | isActive: ${account.isActive} | address: "${account.address}" | type: "${account.type}"`,
   )
   .join('\n')}
 
@@ -190,7 +215,7 @@ ${extraContext.accounts
 ${extraContext.employees
   .map(
     (emp) =>
-      `- ${emp.name} (${emp.role}, ${emp.department}) - ${emp.currency} ${emp.salary.toLocaleString()}/${emp.payFrequency}`,
+      `- name: "${emp.name}" | role: "${emp.role}" | department: "${emp.department}" | salary: ${emp.salary} | currency: "${emp.currency}" | payFrequency: "${emp.payFrequency}" | isActive: ${emp.isActive} | isFounder: ${emp.isFounder} | email: "${emp.email}" | payrollAddress: "${emp.payrollAddress}"`,
   )
   .join('\n')}
 
@@ -198,16 +223,15 @@ ${extraContext.employees
 ${extraContext.contractors
   .map(
     (contractor) =>
-      `- ${contractor.name} (${contractor.specialty}) - ${contractor.currency} ${contractor.hourlyRate}/hour`,
+      `- name: "${contractor.name}" | specialty: "${contractor.specialty}" | hourlyRate: ${contractor.hourlyRate} | currency: "${contractor.currency}" | maxHoursPerWeek: ${contractor.maxHoursPerWeek} | isActive: ${contractor.isActive} | email: "${contractor.email}" | paymentAddress: "${contractor.paymentAddress}" | contractStart: ${contractor.contractStart} | contractEnd: ${contractor.contractEnd}`,
   )
   .join('\n')}
 
-- PENDING INVOICES:
+- INVOICES:
 ${extraContext.invoices
-  .filter((inv) => inv.status === 'unpaid')
   .map(
     (invoice) =>
-      `- ${invoice.vendorName}: ${invoice.currency} ${invoice.amount.toLocaleString()} - ${invoice.description} (${invoice.approved ? 'Approved' : 'Pending Approval'})`,
+      `- vendorName: "${invoice.vendorName}" | amount: ${invoice.amount} | currency: "${invoice.currency}" | description: "${invoice.description}" | status: "${invoice.status}" | approved: ${invoice.approved} | category: "${invoice.category}" | dueDate: ${invoice.dueDate} | invoiceDate: ${invoice.invoiceDate} | priority: "${invoice.priority}" | vendorAddress: "${invoice.vendorAddress}"`,
   )
   .join('\n')}
 

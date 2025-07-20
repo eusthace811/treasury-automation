@@ -42,7 +42,7 @@ The user's request should be interpreted as modifications to the existing rule, 
 
 Instructions:
 - execution.timing: "once" for single execution, "schedule" for recurring, "hook" for event-based
-- execution.at: UNIX timestamp (future timestamp) if timing is "once" - use current time ${currentTime ? ` (${currentTime}, which is ${Math.floor(new Date(currentTime).getTime() / 1000)} in UNIX format)` : ''} + delay in seconds (at least 1 minute)
+- execution.at: UNIX timestamp (future timestamp) if timing is "once" - use current time ${currentTime ? ` (${currentTime}, which is ${Math.floor(new Date(currentTime).getTime() / 1000)} in UNIX format)` : ''} + delay in seconds (at least 5 minutes)
 - execution.cron: standard 5-field UNIX cron expression (minute hour day month weekday) when timing is "schedule" - do NOT include seconds field
 - execution.hooks: array of {type, target} if timing is "hook"
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "leftover" for remaining balance

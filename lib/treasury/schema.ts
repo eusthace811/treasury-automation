@@ -44,7 +44,7 @@ export const amountSchema = z.union([
 
 export const paymentSchema = z
   .object({
-    action: z.enum(['simple', 'split', 'leftover']),
+    action: z.enum(['simple', 'split', 'calculation', 'leftover']),
     source: z.string().min(1, 'Payment source is required'),
     beneficiary: z.array(z.string()).min(1),
     amount: amountSchema,

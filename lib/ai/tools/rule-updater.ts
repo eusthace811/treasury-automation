@@ -36,6 +36,8 @@ export const ruleUpdater = (chatId: string) =>
     execute: async ({ rule, name, memo }) => {
       try {
         const treasuryRuleData = rule as TreasuryRuleData;
+        console.log('🔧 Rule-updater called for chat:', chatId);
+        console.log('📋 Rule data:', JSON.stringify(treasuryRuleData, null, 2));
 
         // Get current chat data to check for existing schedule
         const currentChat = await db
@@ -82,12 +84,20 @@ export const ruleUpdater = (chatId: string) =>
 
         // Create new QStash execution (schedule or delayed message) for rule execution
         let newScheduleId: any;
+        console.log(
+          '⏰ Checking execution timing:',
+          treasuryRuleData.execution.timing,
+        );
 
         if (
           treasuryRuleData.execution.timing === 'schedule' &&
           treasuryRuleData.execution.cron
         ) {
           // Create recurring schedule
+          console.log(
+            '📅 Creating QStash schedule with cron:',
+            treasuryRuleData.execution.cron,
+          );
           try {
             const scheduleResult = await qstashClient.schedules.create({
               destination: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
@@ -99,9 +109,9 @@ export const ruleUpdater = (chatId: string) =>
               cron: treasuryRuleData.execution.cron,
             });
             newScheduleId = scheduleResult.scheduleId;
-            console.log('Created QStash schedule ID:', newScheduleId);
+            console.log('✅ Created QStash schedule ID:', newScheduleId);
           } catch (error) {
-            console.error('Failed to create QStash schedule:', error);
+            console.error('❌ Failed to create QStash schedule:', error);
             // Continue without schedule - rule will be saved but not scheduled
           }
         } else if (
@@ -109,22 +119,38 @@ export const ruleUpdater = (chatId: string) =>
           treasuryRuleData.execution.at
         ) {
           // Create one-time delayed message
+          console.log(
+            '⏱️ Creating QStash delayed message for timestamp:',
+            treasuryRuleData.execution.at,
+          );
           try {
             const messageResult = await qstashClient.publishJSON({
               url: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
               headers: {
                 'Content-Type': 'application/json',
-                'Upstash-Deduplication-Id': chatId,
               },
-              body: { chatId, ruleData: treasuryRuleData },
+              body: JSON.stringify({
+                chatId: chatId,
+                ruleData: treasuryRuleData,
+              }),
               notBefore: treasuryRuleData.execution.at, // Unix timestamp
+              deduplicationId: chatId,
             });
             newScheduleId = messageResult.messageId;
-            console.log('Created QStash delayed message ID:', newScheduleId);
+            console.log('✅ Created QStash delayed message ID:', newScheduleId);
           } catch (error) {
-            console.error('Failed to create QStash delayed message:', error);
+            console.error('❌ Failed to create QStash delayed message:', error);
             // Continue without delayed message - rule will be saved but not scheduled
           }
+        } else {
+          console.log(
+            '🚫 No QStash execution created. Timing:',
+            treasuryRuleData.execution.timing,
+            'Cron:',
+            treasuryRuleData.execution.cron,
+            'At:',
+            treasuryRuleData.execution.at,
+          );
         }
 
         // Update the chat with rule data and schedule ID
