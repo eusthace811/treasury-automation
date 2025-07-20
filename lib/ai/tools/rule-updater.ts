@@ -1,12 +1,12 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, eq, isNull } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { chat } from '@/lib/db/schema';
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
 
-// Database connection for the tool
+// Use shared database connection
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 

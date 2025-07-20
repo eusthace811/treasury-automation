@@ -8,7 +8,7 @@ import {
 } from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
 import { getTracer } from '@lmnr-ai/lmnr';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import { type ExtraContext, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
   deleteChatById,
@@ -30,6 +30,12 @@ import { ruleValidator } from '@/lib/ai/tools/rule-validator';
 import { ruleEvaluator } from '@/lib/ai/tools/rule-evaluator';
 import { createRuleUpdater } from '@/lib/ai/tools/rule-updater';
 import { ruleAnswer } from '@/lib/ai/tools/rule-answer';
+import { 
+  accountsData, 
+  employeesData, 
+  invoicesData, 
+  treasuryData 
+} from '@/data/mockup';
 
 // import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
@@ -136,13 +142,20 @@ export async function POST(request: Request) {
 
     const { longitude, latitude, city, country } = geolocation(request);
 
-    const requestHints: RequestHints = {
+    const extraContext: ExtraContext = {
       userId: session.user.id,
       chatId: id,
       longitude,
       latitude,
       city,
       country,
+      
+      // Add business context from mockup data
+      accounts: accountsData.accounts,
+      employees: employeesData.employees,
+      contractors: employeesData.contractors,
+      invoices: invoicesData.invoices,
+      treasury: treasuryData.treasury,
     };
 
     await saveMessages({
@@ -165,7 +178,7 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPrompt({ selectedChatModel, extraContext }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(12),
           experimental_activeTools:

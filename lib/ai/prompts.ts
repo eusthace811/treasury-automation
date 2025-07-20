@@ -1,7 +1,16 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
+import type { 
+  Account, 
+  Employee, 
+  Contractor, 
+  Invoice, 
+  Treasury 
+} from '@/data/mockup';
 
 export const artifactsPrompt = `
+## Artifacts
+
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
 
 When asked to write code, always use artifacts. When writing code, specify the language in the backticks, e.g. \`\`\`python\`code here\`\`\`. The default language is Python. Other languages are not yet supported, so let the user know if they request a different language.
@@ -39,7 +48,7 @@ export const regularPrompt = `You are a Treasury Automation Assistant, designed 
 You can help users with:
 - **Creating Treasury Rules**: Convert natural language descriptions into structured treasury automation rules
 - **Payment Automation**: Set up rules for recurring payments, split payments, and leftover distributions
-- **Schedule Management**: Configure rules to execute once, on schedules (cron), or triggered by events (hooks)
+- **Schedule Management**: Configure rules to execute once, on schedules (standard unix cron), or triggered by events (hooks)
 - **Rule Validation**: Ensure rules meet schema requirements and business logic constraints
 - **Rule Analysis**: Evaluate rules for potential issues, conflicts, and optimization opportunities
 - **Rule Management**: Save, update, retrieve, and manage treasury rules in the database
@@ -120,41 +129,80 @@ When a user wants to edit/modify/update an existing treasury rule:
 - Provide step-by-step breakdowns for complex operations
 - Include warnings for potentially risky configurations
 
-Remember: Treasury operations involve real financial transactions. Always prioritize accuracy, security, and clear communication.`;
+Remember: Treasury operations involve real financial transactions. Always prioritize accuracy, security, and clear communication.
+`;
 
-export interface RequestHints {
+export interface ExtraContext {
   userId: string;
   chatId: string;
   latitude: Geo['latitude'];
   longitude: Geo['longitude'];
   city: Geo['city'];
   country: Geo['country'];
+  
+  // Business context from mockup data
+  accounts: Account[];
+  employees: Employee[];
+  contractors: Contractor[];
+  invoices: Invoice[];
+  treasury: Treasury;
 }
 
-export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
-About the origin of user's request:
-- userId: ${requestHints.userId}
-- chatId: ${requestHints.chatId}
-- lat: ${requestHints.latitude}
-- lon: ${requestHints.longitude}
-- city: ${requestHints.city}
-- country: ${requestHints.country}
+export const getExtraContext = (extraContext: ExtraContext) => `\
+## About the origin of user's request:
+- userId: ${extraContext.userId}
+- chatId: ${extraContext.chatId}
+- lat: ${extraContext.latitude}
+- lon: ${extraContext.longitude}
+- city: ${extraContext.city}
+- country: ${extraContext.country}
+
+## Business Context:
+
+- ACCOUNTS:
+${extraContext.accounts.map(account => 
+  `- ${account.name} (${account.currency}): ${account.balance.toLocaleString()} - ${account.description}`
+).join('\n')}
+
+- EMPLOYEES:
+${extraContext.employees.map(emp => 
+  `- ${emp.name} (${emp.role}, ${emp.department}) - ${emp.currency} ${emp.salary.toLocaleString()}/${emp.payFrequency}`
+).join('\n')}
+
+- CONTRACTORS:
+${extraContext.contractors.map(contractor => 
+  `- ${contractor.name} (${contractor.specialty}) - ${contractor.currency} ${contractor.hourlyRate}/hour`
+).join('\n')}
+
+- PENDING INVOICES:
+${extraContext.invoices.filter(inv => inv.status === 'unpaid').map(invoice => 
+  `- ${invoice.vendorName}: ${invoice.currency} ${invoice.amount.toLocaleString()} - ${invoice.description} (${invoice.approved ? 'Approved' : 'Pending Approval'})`
+).join('\n')}
+
+- TREASURY SNAPSHOT:
+- Company: ${extraContext.treasury.name}
+- Current Month Revenue: $${extraContext.treasury.snapshot.currentMonth.revenue.toLocaleString()}
+- Current Month Expenses: $${extraContext.treasury.snapshot.currentMonth.expenses.toLocaleString()}
+- Monthly Burn Rate: $${extraContext.treasury.snapshot.currentMonth.burnRate.toLocaleString()}
+- Runway: ${extraContext.treasury.snapshot.currentMonth.runway} months
 `;
 
 export const systemPrompt = ({
   selectedChatModel,
-  requestHints,
+  extraContext,
 }: {
   selectedChatModel: string;
-  requestHints: RequestHints;
+  extraContext: ExtraContext;
 }) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
-
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  }
+  const requestPrompt = getExtraContext(extraContext);
+  const prompt = `${regularPrompt}\n\n${requestPrompt}`;
+  // if (selectedChatModel === 'chat-model-reasoning') {
+  //   return `${regularPrompt}\n\n${requestPrompt}`;
+  // } else {
+  //   return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  // }
+  console.log(`-- systemPrompt --:\n`, selectedChatModel, JSON.stringify(prompt, null, 4));
+  return prompt;
 };
 
 export const codePrompt = `
