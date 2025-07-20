@@ -21,6 +21,7 @@ export const ruleParser = tool({
   }),
   execute: async ({ naturalLanguageRule, existingRule }) => {
     try {
+      const currentTime = new Date().toISOString();
       const result = await generateObject({
         model: myProvider.languageModel(chatModels[0]?.id),
         prompt: `${existingRule ? 'UPDATE' : 'PARSE'} the following natural language treasury rule into a structured format:
@@ -41,12 +42,12 @@ The user's request should be interpreted as modifications to the existing rule, 
 
 Instructions:
 - execution.timing: "once" for single execution, "schedule" for recurring, "hook" for event-based
-- execution.at: UNIX timestamp (future timestamp) if timing is "once" - use Math.floor(Date.now() / 1000) + delay_in_seconds
+- execution.at: UNIX timestamp (future timestamp) if timing is "once" - use current time ${currentTime ? ` (${currentTime}, which is ${Math.floor(new Date(currentTime).getTime() / 1000)} in UNIX format)` : ''} + delay in seconds (at least 1 minute)
 - execution.cron: standard 5-field UNIX cron expression (minute hour day month weekday) when timing is "schedule" - do NOT include seconds field
 - execution.hooks: array of {type, target} if timing is "hook"
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "leftover" for remaining balance
-- payment.source: REQUIRED - where the money comes from. Available accounts: "Operating Account", "Reserve Fund", "Sales Revenue", "Profit Sharing Pool", "Payroll Processing", "Growth Investment Fund" or wallet addresses
-- payment.beneficiary: Array of recipient identifiers - internal accounts, employee/contractor names, wallet addresses, or collection names for multiple recipients (use context for available accounts and beneficiaries)
+- payment.source: REQUIRED - where the money comes from. Use context info for available accounts or wallet addresses
+- payment.beneficiary: array of recipient identifiers - internal accounts, employee/contractor names, wallet addresses, or collection names for multiple recipients (use context for available accounts and beneficiaries)
 - payment.amount: string amount or {type, value} object for dynamic amounts
 - payment.currency: currency symbol ("USDC", "ETH", etc.) - if not specified, preserve existing or default to "USDC"
 - payment.percentages: array of percentages (must sum to 100) if action is "split"
