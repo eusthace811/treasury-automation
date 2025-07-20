@@ -55,7 +55,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   <PlusIcon />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align="end">New Task</TooltipContent>
+              <TooltipContent align="end">New Rule</TooltipContent>
             </Tooltip>
           </div>
         </SidebarMenu>

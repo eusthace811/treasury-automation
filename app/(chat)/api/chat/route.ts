@@ -29,13 +29,13 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { ruleParser } from '@/lib/ai/tools/rule-parser';
 import { ruleValidator } from '@/lib/ai/tools/rule-validator';
 import { ruleEvaluator } from '@/lib/ai/tools/rule-evaluator';
-import { createRuleUpdater } from '@/lib/ai/tools/rule-updater';
+import { ruleUpdater } from '@/lib/ai/tools/rule-updater';
 import { ruleAnswer } from '@/lib/ai/tools/rule-answer';
-import { 
-  accountsData, 
-  employeesData, 
-  invoicesData, 
-  treasuryData 
+import {
+  accountsData,
+  employeesData,
+  invoicesData,
+  treasuryData,
 } from '@/data/mockup';
 
 // import { isProductionEnvironment } from '@/lib/constants';
@@ -153,14 +153,14 @@ export async function POST(request: Request) {
       latitude,
       city,
       country,
-      
+
       // Add business context from mockup data
       accounts: accountsData.accounts,
       employees: employeesData.employees,
       contractors: employeesData.contractors,
       invoices: invoicesData.invoices,
       treasury: treasuryData.treasury,
-      
+
       // Add current chat rule data for editing scenarios
       currentRule: currentChat?.ruleData || null,
     };
@@ -207,7 +207,7 @@ export async function POST(request: Request) {
             ruleParser,
             ruleValidator,
             ruleEvaluator,
-            ruleUpdater: createRuleUpdater(id),
+            ruleUpdater: ruleUpdater(id),
             ruleAnswer,
             // getWeather,
             // createDocument: createDocument({ session, dataStream }),
@@ -307,17 +307,23 @@ export async function PATCH(request: Request) {
     return new ChatSDKError('unauthorized:chat').toResponse();
   }
 
-  let body;
+  let body: any;
   try {
     body = await request.json();
   } catch (error) {
-    return new ChatSDKError('bad_request:api', 'Invalid JSON body').toResponse();
+    return new ChatSDKError(
+      'bad_request:api',
+      'Invalid JSON body',
+    ).toResponse();
   }
 
   const { title } = body;
 
   if (!title || typeof title !== 'string' || !title.trim()) {
-    return new ChatSDKError('bad_request:api', 'Title is required and must be a non-empty string').toResponse();
+    return new ChatSDKError(
+      'bad_request:api',
+      'Title is required and must be a non-empty string',
+    ).toResponse();
   }
 
   const chat = await getChatById({ id });

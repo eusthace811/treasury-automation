@@ -52,10 +52,10 @@ function PureChatHeader({
               }}
             >
               <PlusIcon />
-              <span className="md:sr-only">New Task</span>
+              <span className="md:sr-only">New Rule</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>New Task</TooltipContent>
+          <TooltipContent>New Rule</TooltipContent>
         </Tooltip>
       )}
 
