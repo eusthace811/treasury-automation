@@ -376,14 +376,14 @@ const PurePreviewMessage = ({
                 }
               }
 
-              if (type === 'tool-ruleSaver') {
+              if (type === 'tool-ruleUpdater') {
                 const { toolCallId, state } = part;
 
                 if (state === 'input-available') {
                   const { input } = part;
                   return (
                     <div key={toolCallId}>
-                      <TreasuryRule toolType="ruleSaver" args={input} />
+                      <TreasuryRule toolType="ruleUpdater" args={input} />
                     </div>
                   );
                 }
@@ -392,7 +392,7 @@ const PurePreviewMessage = ({
                   const { output } = part;
                   return (
                     <div key={toolCallId}>
-                      <TreasuryRule toolType="ruleSaver" result={output} />
+                      <TreasuryRule toolType="ruleUpdater" result={output} />
                     </div>
                   );
                 }

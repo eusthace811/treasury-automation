@@ -28,7 +28,7 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { ruleParser } from '@/lib/ai/tools/rule-parser';
 import { ruleValidator } from '@/lib/ai/tools/rule-validator';
 import { ruleEvaluator } from '@/lib/ai/tools/rule-evaluator';
-import { ruleSaver } from '@/lib/ai/tools/rule-saver';
+import { createRuleUpdater } from '@/lib/ai/tools/rule-updater';
 import { ruleAnswer } from '@/lib/ai/tools/rule-answer';
 
 // import { isProductionEnvironment } from '@/lib/constants';
@@ -138,6 +138,7 @@ export async function POST(request: Request) {
 
     const requestHints: RequestHints = {
       userId: session.user.id,
+      chatId: id,
       longitude,
       latitude,
       city,
@@ -174,7 +175,7 @@ export async function POST(request: Request) {
                   'ruleParser',
                   'ruleValidator',
                   'ruleEvaluator',
-                  'ruleSaver',
+                  'ruleUpdater',
                   'ruleAnswer',
                   // 'getWeather',
                   // 'createDocument',
@@ -186,7 +187,7 @@ export async function POST(request: Request) {
             ruleParser,
             ruleValidator,
             ruleEvaluator,
-            ruleSaver,
+            ruleUpdater: createRuleUpdater(id),
             ruleAnswer,
             // getWeather,
             // createDocument: createDocument({ session, dataStream }),

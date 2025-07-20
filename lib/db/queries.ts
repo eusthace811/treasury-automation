@@ -29,8 +29,6 @@ import {
   type DBMessage,
   type Chat,
   stream,
-  treasuryRule,
-  type DBTreasuryRule,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -110,12 +108,13 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    await db.delete(vote).where(eq(vote.chatId, id));
-    await db.delete(message).where(eq(message.chatId, id));
-    await db.delete(stream).where(eq(stream.chatId, id));
-
+    // Soft delete: set deletedAt timestamp and deactivate any treasury rule
     const [chatsDeleted] = await db
-      .delete(chat)
+      .update(chat)
+      .set({ 
+        deletedAt: new Date(),
+        isActive: false, // Deactivate any treasury rule
+      })
       .where(eq(chat.id, id))
       .returning();
     return chatsDeleted;
@@ -147,8 +146,8 @@ export async function getChatsByUserId({
         .from(chat)
         .where(
           whereCondition
-            ? and(whereCondition, eq(chat.userId, id))
-            : eq(chat.userId, id),
+            ? and(whereCondition, eq(chat.userId, id), isNull(chat.deletedAt))
+            : and(eq(chat.userId, id), isNull(chat.deletedAt)),
         )
         .orderBy(desc(chat.createdAt))
         .limit(extendedLimit);
@@ -159,7 +158,7 @@ export async function getChatsByUserId({
       const [selectedChat] = await db
         .select()
         .from(chat)
-        .where(eq(chat.id, startingAfter))
+        .where(and(eq(chat.id, startingAfter), isNull(chat.deletedAt)))
         .limit(1);
 
       if (!selectedChat) {
@@ -174,7 +173,7 @@ export async function getChatsByUserId({
       const [selectedChat] = await db
         .select()
         .from(chat)
-        .where(eq(chat.id, endingBefore))
+        .where(and(eq(chat.id, endingBefore), isNull(chat.deletedAt)))
         .limit(1);
 
       if (!selectedChat) {
@@ -205,7 +204,10 @@ export async function getChatsByUserId({
 
 export async function getChatById({ id }: { id: string }) {
   try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
+    const [selectedChat] = await db
+      .select()
+      .from(chat)
+      .where(and(eq(chat.id, id), isNull(chat.deletedAt)));
     return selectedChat;
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to get chat by id');
@@ -464,7 +466,10 @@ export async function updateChatVisiblityById({
   visibility: 'private' | 'public';
 }) {
   try {
-    return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
+    return await db
+      .update(chat)
+      .set({ visibility })
+      .where(and(eq(chat.id, chatId), isNull(chat.deletedAt)));
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
@@ -541,163 +546,35 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
   }
 }
 
-export async function saveRule({
-  name,
-  original,
-  ruleData,
-  userId,
-  memo,
-}: {
-  name: string;
-  original: string;
-  ruleData: any;
-  userId: string;
-  memo?: string;
-}) {
+
+// New function for unified Chat-as-Rule-Storage architecture
+export async function getActiveRulesByUserId({ userId }: { userId: string }) {
   try {
     return await db
-      .insert(treasuryRule)
-      .values({
-        name,
-        original,
-        ruleData,
-        userId,
-        memo,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      .select({
+        id: chat.id,
+        name: chat.title, // Chat title is the rule name
+        ruleData: chat.ruleData,
+        original: chat.original,
+        isActive: chat.isActive,
+        memo: chat.memo,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt,
       })
-      .returning();
-  } catch (error) {
-    throw new ChatSDKError('bad_request:database', 'Failed to save rule');
-  }
-}
-
-export async function editRule({
-  id,
-  userId,
-  name,
-  ruleData,
-  isActive,
-  memo,
-}: {
-  id: string;
-  userId: string;
-  name?: string;
-  ruleData?: any;
-  isActive?: boolean;
-  memo?: string;
-}) {
-  try {
-    const updateData: Partial<DBTreasuryRule> = {
-      updatedAt: new Date(),
-    };
-
-    if (name !== undefined) updateData.name = name;
-    if (ruleData !== undefined) updateData.ruleData = ruleData;
-    if (isActive !== undefined) updateData.isActive = isActive;
-    if (memo !== undefined) updateData.memo = memo;
-
-    return await db
-      .update(treasuryRule)
-      .set(updateData)
+      .from(chat)
       .where(
         and(
-          eq(treasuryRule.id, id),
-          eq(treasuryRule.userId, userId),
-          isNull(treasuryRule.deletedAt)
+          eq(chat.userId, userId),
+          isNull(chat.deletedAt), // Not soft deleted
+          eq(chat.isActive, true), // Rule is active
+          isNotNull(chat.ruleData) // Has rule data
         )
       )
-      .returning();
-  } catch (error) {
-    throw new ChatSDKError('bad_request:database', 'Failed to edit rule');
-  }
-}
-
-export async function getRulesByUserId({ userId }: { userId: string }) {
-  try {
-    return await db
-      .select()
-      .from(treasuryRule)
-      .where(and(eq(treasuryRule.userId, userId), isNull(treasuryRule.deletedAt)))
-      .orderBy(desc(treasuryRule.createdAt));
+      .orderBy(desc(chat.createdAt));
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
-      'Failed to get rules by user id',
+      'Failed to get active rules by user id',
     );
-  }
-}
-
-export async function getRuleById({
-  id,
-  userId,
-}: {
-  id: string;
-  userId: string;
-}) {
-  try {
-    const [rule] = await db
-      .select()
-      .from(treasuryRule)
-      .where(
-        and(
-          eq(treasuryRule.id, id),
-          eq(treasuryRule.userId, userId),
-          isNull(treasuryRule.deletedAt)
-        )
-      );
-
-    return rule;
-  } catch (error) {
-    throw new ChatSDKError('bad_request:database', 'Failed to get rule by id');
-  }
-}
-
-export async function deleteRuleById({
-  id,
-  userId,
-}: {
-  id: string;
-  userId: string;
-}) {
-  try {
-    return await db
-      .update(treasuryRule)
-      .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(
-        and(
-          eq(treasuryRule.id, id),
-          eq(treasuryRule.userId, userId),
-          isNull(treasuryRule.deletedAt)
-        )
-      )
-      .returning();
-  } catch (error) {
-    throw new ChatSDKError('bad_request:database', 'Failed to delete rule');
-  }
-}
-
-export async function restoreRuleById({
-  id,
-  userId,
-}: {
-  id: string;
-  userId: string;
-}) {
-  try {
-    return await db
-      .update(treasuryRule)
-      .set({ deletedAt: null, updatedAt: new Date() })
-      .where(
-        and(
-          eq(treasuryRule.id, id),
-          eq(treasuryRule.userId, userId),
-          isNotNull(treasuryRule.deletedAt)
-        )
-      )
-      .returning();
-  } catch (error) {
-    throw new ChatSDKError('bad_request:database', 'Failed to restore rule');
   }
 }

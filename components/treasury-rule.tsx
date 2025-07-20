@@ -22,7 +22,7 @@ import type { TreasuryRuleData } from '@/lib/treasury/schema';
 //   | { data: TreasuryRuleData } // ruleParser result
 //   | { data: { isValid: boolean } } // ruleValidator result
 //   | { data: { riskLevel?: string; suggestions?: string[]; issues?: string[] } } // ruleEvaluator result
-//   | { data: { id?: string; name?: string; message?: string } } // ruleSaver result
+//   | { data: { chatId?: string; name?: string; message?: string } } // ruleUpdater result
 //   | {
 //       data: {
 //         steps?: Array<{ thought: string; reasoning: string }>;
@@ -41,7 +41,7 @@ export function TreasuryRule({
     | 'ruleParser'
     | 'ruleValidator'
     | 'ruleEvaluator'
-    | 'ruleSaver'
+    | 'ruleUpdater'
     | 'ruleAnswer';
   result?: any;
   args?: any;
@@ -110,7 +110,7 @@ export function TreasuryRule({
       )}
 
       {/* Rule Saver Result */}
-      {toolType === 'ruleSaver' && 'data' in result && (
+      {toolType === 'ruleUpdater' && 'data' in result && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <PersonIcon className="h-4 w-4 text-green-600" />
@@ -399,8 +399,8 @@ function getToolDisplayName(toolType: string): string {
       return 'Rule Validator';
     case 'ruleEvaluator':
       return 'Rule Evaluator';
-    case 'ruleSaver':
-      return 'Rule Saver';
+    case 'ruleUpdater':
+      return 'Rule Updater';
     case 'ruleAnswer':
       return 'Treasury Rule Process';
     default:
@@ -416,8 +416,8 @@ function getToolLoadingMessage(toolType: string): string {
       return 'Validating rule structure...';
     case 'ruleEvaluator':
       return 'Evaluating rule for issues...';
-    case 'ruleSaver':
-      return 'Saving rule to database...';
+    case 'ruleUpdater':
+      return 'Updating rule in chat...';
     case 'ruleAnswer':
       return 'Finalizing treasury process...';
     default:

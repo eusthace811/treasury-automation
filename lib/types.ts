@@ -6,7 +6,7 @@ import type { requestSuggestions } from './ai/tools/request-suggestions';
 import type { ruleParser } from './ai/tools/rule-parser';
 import type { ruleEvaluator } from './ai/tools/rule-evaluator';
 import type { ruleValidator } from './ai/tools/rule-validator';
-import type { ruleSaver } from './ai/tools/rule-saver';
+import type { ruleUpdater } from './ai/tools/rule-updater';
 import type { ruleAnswer } from './ai/tools/rule-answer';
 import type { InferUITool, UIMessage } from 'ai';
 
@@ -30,7 +30,7 @@ type requestSuggestionsTool = InferUITool<
 type ruleParserTool = InferUITool<typeof ruleParser>;
 type ruleEvaluatorTool = InferUITool<typeof ruleEvaluator>;
 type ruleValidatorTool = InferUITool<typeof ruleValidator>;
-type ruleSaverTool = InferUITool<typeof ruleSaver>;
+type ruleUpdaterTool = InferUITool<typeof ruleUpdater>;
 type ruleAnswerTool = InferUITool<typeof ruleAnswer>;
 
 export type ChatTools = {
@@ -41,7 +41,7 @@ export type ChatTools = {
   ruleParser: ruleParserTool;
   ruleEvaluator: ruleEvaluatorTool;
   ruleValidator: ruleValidatorTool;
-  ruleSaver: ruleSaverTool;
+  ruleUpdater: ruleUpdaterTool;
   ruleAnswer: ruleAnswerTool;
 };
 

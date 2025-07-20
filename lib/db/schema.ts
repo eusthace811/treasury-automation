@@ -29,6 +29,13 @@ export const chat = pgTable('Chat', {
   visibility: varchar('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('private'),
+  // Treasury rule fields - one chat = one rule
+  original: text('original'), // Original natural language rule
+  ruleData: json('ruleData'), // Parsed treasury rule structure
+  isActive: boolean('isActive').default(false), // Rule execution status
+  memo: text('memo'), // Optional rule notes
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  deletedAt: timestamp('deletedAt'), // Soft delete timestamp
 });
 
 export type Chat = InferSelectModel<typeof chat>;
@@ -169,19 +176,3 @@ export const stream = pgTable(
 
 export type Stream = InferSelectModel<typeof stream>;
 
-export const treasuryRule = pgTable('Treasury_Rule', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
-  name: varchar('name', { length: 255 }).notNull(),
-  original: text('original').notNull(),
-  ruleData: json('ruleData').notNull(),
-  isActive: boolean('isActive').notNull().default(true),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => user.id),
-  memo: text('memo'),
-  deletedAt: timestamp('deletedAt'),
-});
-
-export type DBTreasuryRule = InferSelectModel<typeof treasuryRule>;

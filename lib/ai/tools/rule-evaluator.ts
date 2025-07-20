@@ -2,7 +2,7 @@ import { tool } from 'ai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
-import { getRulesByUserId } from '@/lib/db/queries';
+import { getActiveRulesByUserId } from '@/lib/db/queries';
 import { chatModels } from '../models';
 import { myProvider } from '../providers';
 
@@ -41,12 +41,12 @@ export const ruleEvaluator = tool({
     excludeRuleId: z
       .string()
       .optional()
-      .describe('Rule ID to exclude from conflict check (for editing existing rules)'),
+      .describe('Chat ID to exclude from conflict check (for editing existing rules in current chat)'),
   }),
   execute: async ({ rule, userId, excludeRuleId }) => {
     try {
-      // Fetch existing rules from database
-      const allExistingRules = await getRulesByUserId({ userId });
+      // Fetch existing active rules from database (Chat-as-Rule-Storage)
+      const allExistingRules = await getActiveRulesByUserId({ userId });
       
       // Filter out the rule being edited if excludeRuleId is provided
       const existingRules = excludeRuleId 

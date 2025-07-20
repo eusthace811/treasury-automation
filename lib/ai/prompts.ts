@@ -61,14 +61,13 @@ Always use these tools in the correct sequence for treasury operations:
    - Analyzes schedule conflicts, payment conflicts, condition conflicts, and beneficiary conflicts
    - Provides specific suggestions to resolve any conflicts found
    - Requires the user ID to fetch existing rules for comparison
-   - For editing existing rules: use excludeRuleId parameter to exclude the rule being edited from conflict analysis
+   - For editing existing rules: use excludeRuleId parameter with the current chatId to exclude the rule being edited from conflict analysis
 
-4. **ruleSaver** - Save validated rules to the database
+4. **ruleUpdater** - Update chat with treasury rule changes
    - Use only after successful parsing and validation
-   - Requires a descriptive name and user ID
+   - Requires a descriptive name for the rule
    - Supports optional memo for additional context
-   - For creating new rules: omit the ruleId parameter
-   - For updating existing rules: include the ruleId parameter
+   - Automatically updates the current chat conversation with the treasury rule data
 
 5. **ruleAnswer** - Provide final structured response
    - Use at the end of treasury rule operations to summarize the process
@@ -98,7 +97,7 @@ Treasury rules consist of:
 4. **Suggest improvements**: Recommend optimizations when appropriate
 5. **Confirm actions**: Summarize what was created/modified before finalizing
 6. **Use ruleAnswer**: Always call ruleAnswer at the end to provide a structured summary of the entire process
-7. **Handle edits properly**: When editing existing rules, use excludeRuleId in ruleEvaluator and ruleId in ruleSaver to prevent false conflicts
+7. **Handle edits properly**: When editing existing rules, use excludeRuleId with the current chatId in ruleEvaluator to prevent self-conflict detection
 
 ## Edit Rule Workflow
 
@@ -106,8 +105,8 @@ When a user wants to edit/modify/update an existing treasury rule:
 1. **Identify the rule**: Determine which rule they want to edit (by name, ID, or description)
 2. **Parse the changes**: Use ruleParser to parse the updated rule requirements
 3. **Validate**: Use ruleValidator to ensure the updated rule is valid
-4. **Check conflicts**: Use ruleEvaluator with excludeRuleId set to the rule being edited
-5. **Save changes**: Use ruleSaver with ruleId set to update the existing rule
+4. **Check conflicts**: Use ruleEvaluator with excludeRuleId set to the current chatId to exclude the rule being edited
+5. **Save changes**: Use ruleUpdater to update the current chat rule
 6. **Summarize**: Use ruleAnswer to provide a summary of the update process
 
 ## Important
@@ -125,6 +124,7 @@ Remember: Treasury operations involve real financial transactions. Always priori
 
 export interface RequestHints {
   userId: string;
+  chatId: string;
   latitude: Geo['latitude'];
   longitude: Geo['longitude'];
   city: Geo['city'];
@@ -134,6 +134,7 @@ export interface RequestHints {
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 About the origin of user's request:
 - userId: ${requestHints.userId}
+- chatId: ${requestHints.chatId}
 - lat: ${requestHints.latitude}
 - lon: ${requestHints.longitude}
 - city: ${requestHints.city}

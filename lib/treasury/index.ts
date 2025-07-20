@@ -8,16 +8,7 @@ export * from './types';
 export { ruleParser } from '../ai/tools/rule-parser';
 export { ruleEvaluator } from '../ai/tools/rule-evaluator';
 export { ruleValidator } from '../ai/tools/rule-validator';
-export {
-  ruleSaver,
-  getTreasuryRules,
-  getTreasuryRule,
-  updateTreasuryRule,
-  deleteTreasuryRule,
-} from '../ai/tools/rule-saver';
+export { ruleUpdater } from '../ai/tools/rule-updater';
+export { ruleAnswer } from '../ai/tools/rule-answer';
 
-// Re-export database schema
-export {
-  treasuryRule,
-  type DBTreasuryRule,
-} from '../db/schema';
+// Note: Treasury rules are now stored in the Chat table (unified Chat-as-Rule-Storage architecture)

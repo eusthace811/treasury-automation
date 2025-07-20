@@ -57,6 +57,20 @@
       "when": 1746120000000,
       "tag": "0007_brave_treasury_hawk",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1746120001000,
+      "tag": "0008_chat_rule_unification",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1746120002000,
+      "tag": "0009_drop_treasury_rule_table",
+      "breakpoints": true
     }
   ]
 }
