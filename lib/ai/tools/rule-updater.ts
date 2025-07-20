@@ -52,15 +52,27 @@ export const ruleUpdater = (chatId: string) =>
         }
 
         const existingScheduleId = currentChat[0].scheduleId;
+        const existingRuleData = currentChat[0]
+          .ruleData as TreasuryRuleData | null;
 
-        // Cancel existing schedule if we're editing a rule that has one
-        if (existingScheduleId) {
+        // Cancel existing execution (schedule or delayed message) if we're editing a rule that has one
+        if (existingScheduleId && existingRuleData?.execution?.timing) {
           try {
-            await qstashClient.schedules.delete(existingScheduleId);
-            console.log('Cancelled existing schedule:', existingScheduleId);
+            const existingTiming = existingRuleData.execution.timing;
+
+            if (existingTiming === 'schedule') {
+              await qstashClient.schedules.delete(existingScheduleId);
+              console.log('Cancelled existing schedule:', existingScheduleId);
+            } else if (existingTiming === 'once') {
+              await qstashClient.messages.delete(existingScheduleId);
+              console.log(
+                'Cancelled existing delayed message:',
+                existingScheduleId,
+              );
+            }
           } catch (error) {
             console.warn(
-              'Failed to cancel existing schedule:',
+              'Failed to cancel existing execution:',
               existingScheduleId,
               error,
             );
@@ -68,14 +80,16 @@ export const ruleUpdater = (chatId: string) =>
           }
         }
 
-        // Create new QStash schedule for rule execution
+        // Create new QStash execution (schedule or delayed message) for rule execution
         let newScheduleId: any;
+
         if (
           treasuryRuleData.execution.timing === 'schedule' &&
           treasuryRuleData.execution.cron
         ) {
+          // Create recurring schedule
           try {
-            newScheduleId = await qstashClient.schedules.create({
+            const scheduleResult = await qstashClient.schedules.create({
               destination: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
               headers: {
                 'Content-type': 'application/json',
@@ -84,10 +98,32 @@ export const ruleUpdater = (chatId: string) =>
               body: JSON.stringify({ chatId, ruleData: treasuryRuleData }),
               cron: treasuryRuleData.execution.cron,
             });
+            newScheduleId = scheduleResult.scheduleId;
             console.log('Created QStash schedule ID:', newScheduleId);
           } catch (error) {
             console.error('Failed to create QStash schedule:', error);
             // Continue without schedule - rule will be saved but not scheduled
+          }
+        } else if (
+          treasuryRuleData.execution.timing === 'once' &&
+          treasuryRuleData.execution.at
+        ) {
+          // Create one-time delayed message
+          try {
+            const messageResult = await qstashClient.publishJSON({
+              url: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
+              headers: {
+                'Content-Type': 'application/json',
+                'Upstash-Deduplication-Id': chatId,
+              },
+              body: { chatId, ruleData: treasuryRuleData },
+              notBefore: treasuryRuleData.execution.at, // Unix timestamp
+            });
+            newScheduleId = messageResult.messageId;
+            console.log('Created QStash delayed message ID:', newScheduleId);
+          } catch (error) {
+            console.error('Failed to create QStash delayed message:', error);
+            // Continue without delayed message - rule will be saved but not scheduled
           }
         }
 
@@ -100,7 +136,7 @@ export const ruleUpdater = (chatId: string) =>
             ruleData: treasuryRuleData, // Always update rule structure
             memo: memo || null,
             isActive: true, // Rule is active when saved
-            scheduleId: newScheduleId.scheduleId, // Store the QStash schedule ID
+            scheduleId: newScheduleId, // Store the QStash schedule ID or message ID
             updatedAt: new Date(),
           })
           .where(and(eq(chat.id, chatId), isNull(chat.deletedAt))) // Only update non-deleted chats
@@ -134,56 +170,3 @@ export const ruleUpdater = (chatId: string) =>
       }
     },
   });
-
-// Default export for backward compatibility (will require chatId in input)
-// export const ruleUpdater = tool({
-//   description: 'Update chat with treasury rule changes (create or modify)',
-//   inputSchema: z.object({
-//     rule: z.any().describe('Updated treasury rule data'),
-//     name: z.string().describe('Rule name (becomes chat title)'),
-//     memo: z.string().optional().describe('Optional rule notes'),
-//     chatId: z.string().describe('Chat ID to update with rule data'),
-//   }),
-//   execute: async ({ rule, name, memo, chatId }) => {
-//     try {
-//       const treasuryRuleData = rule as TreasuryRuleData;
-
-//       // Update the chat with rule data
-//       const [updated] = await db
-//         .update(chat)
-//         .set({
-//           title: name, // Rule name becomes chat title
-//           original: treasuryRuleData.original, // Always update original text
-//           ruleData: treasuryRuleData, // Always update rule structure
-//           memo: memo || null,
-//           isActive: true, // Rule is active when saved
-//           updatedAt: new Date(),
-//         })
-//         .where(and(eq(chat.id, chatId), isNull(chat.deletedAt))) // Only update non-deleted chats
-//         .returning();
-
-//       if (!updated) {
-//         return {
-//           success: false,
-//           error: 'Chat not found or has been deleted',
-//         };
-//       }
-
-//       return {
-//         success: true,
-//         data: {
-//           chatId: updated.id,
-//           name: updated.title,
-//           message: 'Treasury rule updated successfully in chat',
-//           ruleData: updated.ruleData,
-//           isActive: updated.isActive,
-//         },
-//       };
-//     } catch (error) {
-//       return {
-//         success: false,
-//         error: error instanceof Error ? error.message : 'Failed to update rule',
-//       };
-//     }
-//   },
-// });

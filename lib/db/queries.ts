@@ -35,6 +35,8 @@ import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
+import { Client } from '@upstash/qstash';
+import type { TreasuryRuleData } from '@/lib/treasury/schema';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -43,6 +45,15 @@ import { ChatSDKError } from '../errors';
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
+
+// QStash client for schedule management
+const qstashClient = new Client({
+  token:
+    process.env.QSTASH_TOKEN ??
+    (() => {
+      throw new Error('QSTASH_TOKEN environment variable is required');
+    })(),
+});
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
@@ -108,6 +119,36 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
+    // Get current chat to check for existing execution (schedule or delayed message)
+    const [currentChat] = await db
+      .select({ scheduleId: chat.scheduleId, ruleData: chat.ruleData })
+      .from(chat)
+      .where(and(eq(chat.id, id), isNull(chat.deletedAt)))
+      .limit(1);
+
+    // Cancel QStash execution if it exists
+    if (currentChat?.scheduleId && currentChat?.ruleData) {
+      try {
+        const ruleData = currentChat.ruleData as TreasuryRuleData;
+        const executionTiming = ruleData.execution?.timing;
+        
+        if (executionTiming === 'schedule') {
+          await qstashClient.schedules.delete(currentChat.scheduleId);
+          console.log('Cancelled QStash schedule during chat deletion:', currentChat.scheduleId);
+        } else if (executionTiming === 'once') {
+          await qstashClient.messages.delete(currentChat.scheduleId);
+          console.log('Cancelled QStash delayed message during chat deletion:', currentChat.scheduleId);
+        }
+      } catch (error) {
+        console.warn(
+          'Failed to cancel QStash execution during chat deletion:',
+          currentChat.scheduleId,
+          error,
+        );
+        // Continue with deletion even if cancellation fails
+      }
+    }
+
     // Soft delete: set deletedAt timestamp and deactivate any treasury rule
     const [chatsDeleted] = await db
       .update(chat)
