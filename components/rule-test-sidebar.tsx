@@ -477,7 +477,7 @@ export function RuleTestSidebar() {
                   <div className="space-y-4">
                     {/* Simulation Results Header */}
                     <div className="flex items-center gap-2 mb-6">
-                      <h3 className="text-lg font-medium">
+                      <h3 className="text-xl font-medium">
                         Simulation Results
                       </h3>
                       {simulationResult && (
@@ -525,7 +525,7 @@ export function RuleTestSidebar() {
                         {simulationResult.errors.length > 0 && (
                           <Card>
                             <CardHeader>
-                              <CardTitle className="text-destructive">
+                              <CardTitle className="text-white">
                                 Errors
                               </CardTitle>
                             </CardHeader>
@@ -534,7 +534,7 @@ export function RuleTestSidebar() {
                                 {simulationResult.errors.map((error, idx) => (
                                   <li
                                     key={`error-${error}`}
-                                    className="text-sm text-destructive bg-destructive/10 p-2 rounded border-l-2 border-destructive"
+                                    className="font-medium text-destructive bg-white p-2 rounded border-l-2 border-destructive"
                                   >
                                     • {error}
                                   </li>
@@ -587,10 +587,13 @@ export function RuleTestSidebar() {
                                     className="space-y-2"
                                   >
                                     <div className="flex items-center gap-2">
-                                      <span className="font-medium">
+                                      <span className="font-medium text-cyan-400">
                                         {collection.type}
                                       </span>
-                                      <Badge variant="outline">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-cyan-400"
+                                      >
                                         {collection.items.length} items
                                       </Badge>
                                     </div>
