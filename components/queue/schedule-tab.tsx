@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cronToHuman } from '@/lib/utils/cron';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Clock, CheckCircle, Circle } from 'lucide-react';
 import type { Schedule } from '@upstash/qstash';
 
 interface ScheduleTabProps {
@@ -22,6 +22,16 @@ interface ScheduleTabProps {
 }
 
 type ScheduleStatus = 'all' | 'active' | 'paused';
+
+const statusIcons = {
+  active: CheckCircle,
+  paused: Circle,
+};
+
+const statusColors = {
+  active: 'text-green-600 bg-green-100',
+  paused: 'text-gray-600 bg-gray-100',
+};
 
 export function ScheduleTab({
   schedules,
@@ -50,16 +60,29 @@ export function ScheduleTab({
     return new Date(timestamp * 1000).toLocaleString();
   };
 
+  const getStatusIcon = (status: string) => {
+    const IconComponent =
+      statusIcons[status as keyof typeof statusIcons] || CheckCircle;
+    return <IconComponent className="size-3" />;
+  };
+
+  const getStatusColor = (status: string) => {
+    return (
+      statusColors[status as keyof typeof statusColors] ||
+      'text-green-600 bg-green-100'
+    );
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <Skeleton className="h-9 w-32" />
-          <Skeleton className="h-9 w-9" />
+          <Skeleton className="size-9" />
         </div>
         {Array.from({ length: 3 }).map((_, i) => (
           <Card
-            key={`loading-skeleton-${
+            key={`skeleton-${
               // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
               i
             }`}
@@ -104,91 +127,126 @@ export function ScheduleTab({
           onClick={onRefresh}
           disabled={loading}
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
       {filteredSchedules.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-muted-foreground text-center">
-              <p className="text-lg font-medium">No schedules found</p>
-              <p className="text-sm mt-2">
-                {statusFilter === 'all'
-                  ? 'No schedules have been created yet.'
-                  : `No ${statusFilter} schedules found.`}
-              </p>
+            <div className="text-muted-foreground text-center space-y-4">
+              <div>
+                <p className="text-lg font-medium">No schedules found</p>
+                <p className="text-sm mt-2">
+                  {statusFilter === 'all'
+                    ? 'No schedules have been created yet.'
+                    : `No ${statusFilter} schedules found.`}
+                </p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md">
+                <p className="text-blue-800 font-medium text-sm mb-2">
+                  Schedules
+                </p>
+                <p className="text-blue-600 text-xs">
+                  Schedules define when your treasury automation tasks should
+                  run. Each schedule represents a recurring job with a specific
+                  cron pattern.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredSchedules.map((schedule) => (
-            <Card key={schedule.scheduleId}>
-              <CardHeader>
-                <CardTitle className="text-lg flex justify-between items-start">
-                  <span className="font-mono text-sm">
-                    ID: {schedule.scheduleId}
-                  </span>
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
-                    ACTIVE
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Destination
-                    </h4>
-                    <p className="text-sm font-mono break-all">
-                      {schedule.destination}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Schedule
-                    </h4>
-                    <p className="text-sm">{cronToHuman(schedule.cron)}</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-1">
-                      {schedule.cron}
-                    </p>
-                  </div>
-                </div>
+        <div className="space-y-3">
+          {filteredSchedules.map((schedule, index) => {
+            const scheduleStatus = 'active'; // Assume active for now
 
-                {schedule.retries && (
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Retries
-                    </h4>
-                    <p className="text-sm">{schedule.retries} attempts</p>
+            return (
+              <Card
+                key={`${schedule.scheduleId}-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  index
+                }`}
+                className="border-l-4 border-l-purple-500"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      ID: {schedule.scheduleId}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(scheduleStatus)}`}
+                      >
+                        {getStatusIcon(scheduleStatus)}
+                        ACTIVE
+                      </span>
+                    </div>
                   </div>
-                )}
+                </CardHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Created
-                    </h4>
-                    <p className="text-sm">
-                      {formatTimestamp(schedule.createdAt)}
-                    </p>
+                <CardContent className="pt-0 space-y-4">
+                  {/* Main Info Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">
+                        Destination:
+                      </span>
+                      <p className="font-mono text-xs mt-1 break-all">
+                        {schedule.destination}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">
+                        Schedule:
+                      </span>
+                      <p className="text-xs mt-1">
+                        {cronToHuman(schedule.cron)}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono mt-1">
+                        {schedule.cron}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">
+                        Created:
+                      </span>
+                      <p className="text-xs mt-1">
+                        {formatTimestamp(schedule.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {schedule.callback && (
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Callback URL
-                    </h4>
-                    <p className="text-sm font-mono break-all text-muted-foreground">
-                      {schedule.callback}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Additional Info */}
+                  {(schedule.retries || schedule.callback) && (
+                    <div className="border-t pt-4 space-y-3">
+                      {schedule.retries && (
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-muted-foreground">
+                            Retry Count:
+                          </span>
+                          <span className="text-xs">
+                            {schedule.retries} attempts
+                          </span>
+                        </div>
+                      )}
+
+                      {schedule.callback && (
+                        <div>
+                          <span className="font-medium text-sm text-muted-foreground">
+                            Callback URL:
+                          </span>
+                          <p className="font-mono text-xs mt-1 break-all text-muted-foreground">
+                            {schedule.callback}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { qstashClient } from '@/lib/qstash/client';
+import { qstashClient, QUEUE_NAME } from '@/lib/qstash/client';
 import { auth } from '@/app/(auth)/auth';
 
 export async function GET(request: NextRequest) {
@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
     let cursor = null;
 
     while (true) {
-      const res = await qstashClient.logs({ cursor: cursor ?? undefined });
+      const res = await qstashClient.logs({
+        cursor: cursor ?? undefined,
+        filter: { queueName: QUEUE_NAME },
+      });
       logs.push(...res.logs);
       cursor = res.cursor;
       if (!cursor) {
