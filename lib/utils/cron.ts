@@ -86,24 +86,24 @@ export function formatPayment(payment: {
   if (typeof amount === 'string') {
     amountText = amount;
   } else if (typeof amount === 'object' && amount !== null) {
-    if (amount.type === 'dynamic' && amount.value) {
-      amountText = amount.value;
-    } else if (amount.type === 'fixed' && amount.value) {
-      amountText = `${amount.value}`;
-    } else if (amount.type === 'calculation' && amount.value) {
-      amountText = `calculated amount (${amount.value})`;
-    } else if (amount.type === 'percentage' && amount.value) {
-      amountText = `${amount.value}% of source balance`;
-    } else if (amount.type === 'string' && amount.value) {
-      amountText =
-        amount.value === 'unspecified' ? 'the specified amount' : amount.value;
+    // Handle new source + formula structure
+    if ('source' in amount && amount.source) {
+      if ('formula' in amount && amount.formula) {
+        amountText = `${amount.source} ${amount.formula}`;
+      } else {
+        amountText = `${amount.source}`;
+      }
     } else {
-      amountText = 'the amount';
+      // Invalid object structure - log warning and show structure
+      console.warn('Invalid amount object structure:', amount);
+      amountText = `invalid amount (${JSON.stringify(amount)})`;
     }
   } else if (typeof amount === 'number') {
     amountText = `${amount}`;
   } else {
-    amountText = 'the amount';
+    // Log warning for completely invalid amount types
+    console.warn('Invalid amount type:', typeof amount, amount);
+    amountText = `invalid amount (${typeof amount})`;
   }
 
   // Format beneficiaries

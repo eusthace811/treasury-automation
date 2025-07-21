@@ -3,6 +3,8 @@ import { accountsData, type Account } from '@/data/mockup/accounts';
 import { beneficiariesData, type Employee, type Contractor } from '@/data/mockup/beneficiaries';
 import { transactionsData, type Transaction } from '@/data/mockup/transactions';
 import { treasuryData } from '@/data/mockup/treasury';
+import { treasuryContextResolver, type AmountResolutionContext } from './context-resolver';
+import { safeFormulaEvaluator } from './formula-evaluator';
 
 export interface SimulationResult {
   success: boolean;
@@ -92,8 +94,11 @@ export class TreasurySimulator {
         metadata: {} as SimulationMetadata,
       };
 
+      // Build context for amount resolution
+      const context: AmountResolutionContext = {};
+      
       // Validate and extract payment amount
-      const paymentAmount = this.extractPaymentAmount(ruleData);
+      const paymentAmount = this.extractPaymentAmount(ruleData, context);
       if (!paymentAmount || paymentAmount <= 0) {
         result.success = false;
         result.errors.push('Invalid payment amount');
@@ -225,23 +230,47 @@ export class TreasurySimulator {
     }
   }
 
-  private extractPaymentAmount(ruleData: TreasuryRuleData): number | null {
+  private extractPaymentAmount(ruleData: TreasuryRuleData, context?: AmountResolutionContext): number | null {
+    // Handle simple string amounts
     if (typeof ruleData.payment.amount === 'string') {
       const amount = parseFloat(ruleData.payment.amount);
       return isNaN(amount) ? null : amount;
     }
     
-    if (typeof ruleData.payment.amount === 'object' && 'value' in ruleData.payment.amount) {
-      const value = ruleData.payment.amount.value;
-      const amount = typeof value === 'string' ? parseFloat(value) : value;
-      return isNaN(amount) ? null : amount;
+    // Handle dynamic amounts with source + formula structure
+    if (typeof ruleData.payment.amount === 'object' && 'source' in ruleData.payment.amount) {
+      const { source, formula } = ruleData.payment.amount;
+      
+      // Resolve the source value using context resolver
+      const sourceValue = treasuryContextResolver.resolve(source, context);
+      if (sourceValue === null) {
+        console.warn(`Failed to resolve payment amount source: ${source}`);
+        return null;
+      }
+      
+      // Apply formula if provided
+      if (formula) {
+        const evaluatedAmount = safeFormulaEvaluator.evaluate(formula, sourceValue);
+        if (evaluatedAmount === null) {
+          console.warn(`Failed to evaluate payment amount formula: ${formula}`);
+          return null;
+        }
+        return evaluatedAmount;
+      }
+      
+      return sourceValue;
     }
     
     return null;
   }
 
-  private findAccount(accountId: string): Account | undefined {
-    return accountsData.accounts.find(acc => acc.id === accountId);
+  private findAccount(accountIdentifier: string): Account | undefined {
+    return accountsData.accounts.find(acc => 
+      acc.id === accountIdentifier || 
+      acc.name === accountIdentifier || 
+      acc.slug === accountIdentifier ||
+      acc.address === accountIdentifier
+    );
   }
 
   private findBeneficiary(beneficiaryId: string): Employee | Contractor | undefined {

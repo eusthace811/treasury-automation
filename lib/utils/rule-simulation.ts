@@ -5,15 +5,35 @@ import {
   treasuryData,
   invoicesData,
 } from '@/data/mockup';
+import { treasuryContextResolver, type AmountResolutionContext } from '@/lib/treasury/context-resolver';
+import { safeFormulaEvaluator } from '@/lib/treasury/formula-evaluator';
 
 interface SimulationResult {
   success: boolean;
   payments: Array<{
     from: string;
+    fromAccount: {
+      name: string;
+      slug: string;
+      balance: number;
+      balanceAfter: number;
+    };
     to: string[];
+    toDetails: Array<{
+      id: string;
+      name: string;
+      type: 'invoice' | 'employee' | 'contractor' | 'account';
+      amount: number;
+      description?: string;
+    }>;
     amount: string;
     currency: string;
     action: string;
+    breakdown?: {
+      totalAmount: number;
+      itemCount: number;
+      description: string;
+    };
   }>;
   conditions: Array<{
     description: string;
@@ -83,12 +103,13 @@ export async function simulateRule(
       return result;
     }
 
-    // Find source account (by name, ID, or wallet address)
+    // Find source account (by name, ID, slug, or wallet address)
     const sourceAccount = context.accounts.find(
       (account) =>
         account &&
         (account.name === ruleData.payment.source ||
           account.id === ruleData.payment.source ||
+          account.slug === ruleData.payment.source ||
           account.address === ruleData.payment.source),
     );
 
@@ -276,6 +297,8 @@ function resolveBeneficiaries(
               walletAddress: invoice.vendorAddress,
               invoiceAmount: invoice.amount,
               currency: invoice.currency,
+              description: invoice.description,
+              type: 'invoice',
             },
           });
         }
@@ -632,13 +655,70 @@ function calculatePayments(
     // Create payment based on action type
     switch (payment.action) {
       case 'simple':
-        result.payments.push({
-          from: sourceAccount.name,
-          to: beneficiaries.map((b) => b.id),
-          amount: totalAmount.toString(),
-          currency: payment.currency,
-          action: payment.action,
-        });
+        // For invoice payments, create detailed breakdown by checking actual resolved beneficiaries
+        const invoiceBeneficiaries = beneficiaries.filter(b => b.data && b.data.invoiceAmount);
+        
+        if (invoiceBeneficiaries.length > 0) {
+          // This is an invoice payment - create detailed breakdown
+          const toDetails = invoiceBeneficiaries.map(beneficiary => ({
+            id: beneficiary.id,
+            name: beneficiary.data.name || beneficiary.data.vendorName || beneficiary.id,
+            type: 'invoice' as const,
+            amount: beneficiary.data.invoiceAmount,
+            description: beneficiary.data.description || `Invoice payment to ${beneficiary.data.name || beneficiary.data.vendorName}`,
+          }));
+
+          const actualTotal = toDetails.reduce((sum, detail) => sum + detail.amount, 0);
+
+          result.payments.push({
+            from: sourceAccount.name,
+            fromAccount: {
+              name: sourceAccount.name,
+              slug: sourceAccount.slug,
+              balance: sourceAccount.balance,
+              balanceAfter: sourceAccount.balance - actualTotal,
+            },
+            to: toDetails.map(detail => detail.id),
+            toDetails,
+            amount: actualTotal.toString(),
+            currency: payment.currency,
+            action: payment.action,
+            breakdown: {
+              totalAmount: actualTotal,
+              itemCount: toDetails.length,
+              description: `Payment for ${toDetails.length} approved invoices`,
+            },
+          });
+        } else {
+          // Default behavior for other beneficiaries
+          const toDetails = beneficiaries.map(beneficiary => ({
+            id: beneficiary.id,
+            name: beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id,
+            type: (beneficiary.data?.type || (beneficiary.data?.role ? 'employee' : 'contractor')) as 'invoice' | 'employee' | 'contractor',
+            amount: totalAmount / beneficiaries.length,
+            description: `Payment to ${beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id}`,
+          }));
+
+          result.payments.push({
+            from: sourceAccount.name,
+            fromAccount: {
+              name: sourceAccount.name,
+              slug: sourceAccount.slug,
+              balance: sourceAccount.balance,
+              balanceAfter: sourceAccount.balance - totalAmount,
+            },
+            to: beneficiaries.map((b) => b.id),
+            toDetails,
+            amount: totalAmount.toString(),
+            currency: payment.currency,
+            action: payment.action,
+            breakdown: {
+              totalAmount: totalAmount,
+              itemCount: beneficiaries.length,
+              description: `Payment to ${beneficiaries.length} recipients`,
+            },
+          });
+        }
         break;
 
       case 'split':
@@ -707,24 +787,35 @@ function calculatePayments(
 }
 
 function calculateDynamicAmount(amountConfig: any, sourceAccount: any): number {
-  // Handle dynamic amount calculations
-  if (amountConfig.type === 'percentage') {
-    return (
-      (sourceAccount.balance * Number.parseFloat(amountConfig.value)) / 100
-    );
-  } else if (amountConfig.type === 'calculation') {
-    // Simple calculation support
-    const expression = amountConfig.value.replace(
-      /balance/g,
-      sourceAccount.balance.toString(),
-    );
-    try {
-      // Basic expression evaluation (only for safe math operations)
-      return Function(`"use strict"; return (${expression})`)();
-    } catch {
+  // Handle new source + formula structure
+  if (typeof amountConfig === 'object' && 'source' in amountConfig) {
+    const { source, formula } = amountConfig;
+    
+    // Build context for resolution (include source account for reference)
+    const context: AmountResolutionContext = {
+      account: sourceAccount,
+    };
+    
+    // Resolve the source value
+    const sourceValue = treasuryContextResolver.resolve(source, context);
+    if (sourceValue === null) {
+      console.warn(`Failed to resolve dynamic amount source: ${source}`);
       return 0;
     }
+    
+    // Apply formula if provided
+    if (formula) {
+      const evaluatedAmount = safeFormulaEvaluator.evaluate(formula, sourceValue);
+      if (evaluatedAmount === null) {
+        console.warn(`Failed to evaluate dynamic amount formula: ${formula}`);
+        return 0;
+      }
+      return evaluatedAmount;
+    }
+    
+    return sourceValue;
   }
+  
   return Number.parseFloat(amountConfig.value) || 0;
 }
 

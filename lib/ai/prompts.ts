@@ -209,7 +209,7 @@ name, snapshot.currentMonth.revenue, snapshot.currentMonth.expenses, snapshot.cu
 ${extraContext.accounts
   .map(
     (account) =>
-      `- name: "${account.name}" | currency: "${account.currency}" | balance: ${account.balance} | description: "${account.description}" | isActive: ${account.isActive} | address: "${account.address}" | type: "${account.type}"`,
+      `- slug: "${account.slug}" | name: "${account.name}" | currency: "${account.currency}" | balance: ${account.balance} | description: "${account.description}" | isActive: ${account.isActive} | address: "${account.address}" | type: "${account.type}"`,
   )
   .join('\n')}
 
@@ -239,10 +239,10 @@ ${extraContext.invoices
 
 - TREASURY SNAPSHOT:
 - Company: ${extraContext.treasury.name}
-- Current Month Revenue: $${extraContext.treasury.snapshot.currentMonth.revenue.toLocaleString()}
-- Current Month Expenses: $${extraContext.treasury.snapshot.currentMonth.expenses.toLocaleString()}
-- Monthly Burn Rate: $${extraContext.treasury.snapshot.currentMonth.burnRate.toLocaleString()}
-- Runway: ${extraContext.treasury.snapshot.currentMonth.runway} months
+- Current Month Revenue: $${extraContext.treasury.revenue.toLocaleString()}
+- Current Month Expenses: $${extraContext.treasury.expenses.toLocaleString()}
+- Monthly Burn Rate: $${extraContext.treasury.monthlyBurnRate.toLocaleString()}
+- Runway: ${extraContext.treasury.runway} months
 `;
 
 export const systemPrompt = ({

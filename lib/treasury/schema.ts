@@ -35,10 +35,10 @@ export const executionSchema = z
   );
 
 export const amountSchema = z.union([
-  z.string(),
+  z.string(), // Fixed amounts: "1000"
   z.object({
-    type: z.string(),
-    value: z.union([z.string(), z.number()]),
+    source: z.string().min(1, 'Amount source is required'), // "treasury.revenue", "invoice.amount", "accounts.operating.balance"
+    formula: z.string().optional(), // Optional transformation: "* 0.1", "+ 100", "/ 12"
   }),
 ]);
 

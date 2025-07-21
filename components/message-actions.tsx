@@ -190,7 +190,7 @@ export function PureMessageActions({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                className="py-1 px-2 h-fit text-muted-foreground !pointer-events-auto"
+                className="py-1 px-2 h-[calc(100%-3.81px)] text-muted-foreground !pointer-events-auto"
                 variant="outline"
                 onClick={() => setIsTestSidebarOpen(true)}
               >

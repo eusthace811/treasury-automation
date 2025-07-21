@@ -33,10 +33,28 @@ interface SimulationResult {
   success: boolean;
   payments: Array<{
     from: string;
+    fromAccount: {
+      name: string;
+      slug: string;
+      balance: number;
+      balanceAfter: number;
+    };
     to: string[];
+    toDetails: Array<{
+      id: string;
+      name: string;
+      type: 'invoice' | 'employee' | 'contractor' | 'account';
+      amount: number;
+      description?: string;
+    }>;
     amount: string;
     currency: string;
     action: string;
+    breakdown?: {
+      totalAmount: number;
+      itemCount: number;
+      description: string;
+    };
   }>;
   conditions: Array<{
     description: string;
@@ -693,45 +711,81 @@ export function RuleTestSidebar() {
                                 The following payments would be executed:
                               </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-3">
+                            <CardContent className="space-y-4">
                               {simulationResult.payments.map((payment, idx) => (
                                 <div
-                                  key={`payment-${payment.from}-${payment.to.join('-')}-${payment.currency}`}
-                                  className="p-3 border border-border bg-background/60 rounded-lg space-y-2"
+                                  key={`payment-${idx}`}
+                                  className="border border-border bg-background/60 rounded-lg overflow-hidden"
                                 >
-                                  <div className="flex items-center justify-between">
-                                    <Badge variant="outline">
-                                      {payment.action}
-                                    </Badge>
-                                    <span className="font-mono text-sm">
+                                  {/* Payment Header */}
+                                  <div className="p-3 bg-muted/30 border-b flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline">
+                                        {payment.action}
+                                      </Badge>
+                                      {payment.breakdown && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {payment.breakdown.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="font-mono text-sm font-semibold">
                                       {payment.amount} {payment.currency}
                                     </span>
                                   </div>
-                                  <div className="text-sm text-muted-foreground space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <strong className="text-foreground/80 text-xs">
-                                        From:
-                                      </strong>
-                                      <span className="font-mono bg-secondary/50 px-2 py-1 rounded text-xs">
-                                        {payment.from}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                      <strong className="text-foreground/80 text-xs mt-1">
-                                        To:
-                                      </strong>
-                                      <div className="flex flex-wrap gap-1">
-                                        {payment.to.map((recipient, idx) => (
-                                          <span
-                                            key={`recipient-${recipient}`}
-                                            className="font-mono bg-secondary/50 px-2 py-1 rounded text-xs"
-                                          >
-                                            {recipient}
+
+                                  {/* Source Account Info */}
+                                  {payment.fromAccount && (
+                                    <div className="p-3 bg-red-500/5 border-b">
+                                      <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                          <strong className="text-foreground/80">From:</strong>
+                                          <span className="font-mono bg-red-500/10 px-2 py-1 rounded text-xs border border-red-500/20">
+                                            {payment.fromAccount.name}
                                           </span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Balance: <span className="font-mono">{payment.fromAccount.balance.toLocaleString()}</span> → <span className="font-mono font-semibold">{payment.fromAccount.balanceAfter.toLocaleString()}</span> {payment.currency}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Individual Payment Items */}
+                                  {payment.toDetails && payment.toDetails.length > 0 && (
+                                    <div className="p-3 space-y-2">
+                                      <strong className="text-foreground/80 text-xs block mb-2">
+                                        Payment Details ({payment.toDetails.length} items):
+                                      </strong>
+                                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                                        {payment.toDetails.map((detail, detailIdx) => (
+                                          <div
+                                            key={`detail-${detail.id}`}
+                                            className="flex items-center justify-between p-2 bg-green-500/5 rounded border border-green-500/20"
+                                          >
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2">
+                                                <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
+                                                  {detail.type}
+                                                </Badge>
+                                                <span className="font-medium text-xs truncate">
+                                                  {detail.name}
+                                                </span>
+                                              </div>
+                                              {detail.description && (
+                                                <p className="text-xs text-muted-foreground mt-1 truncate">
+                                                  {detail.description}
+                                                </p>
+                                              )}
+                                            </div>
+                                            <span className="font-mono text-xs font-semibold ml-2">
+                                              {detail.amount.toLocaleString()} {payment.currency}
+                                            </span>
+                                          </div>
                                         ))}
                                       </div>
                                     </div>
-                                  </div>
+                                  )}
                                 </div>
                               ))}
                             </CardContent>

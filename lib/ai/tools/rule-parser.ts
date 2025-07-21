@@ -45,9 +45,15 @@ The user's request should be interpreted as modifications to the existing rule, 
 - execution.cron: standard 5-field UNIX cron expression (minute hour day month weekday) when timing is "schedule" - do NOT include seconds field
 - execution.hooks: array of {type, target} if timing is "hook"
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "calculation" for computed amounts based on formulas or conditions, "leftover" for remaining balance transfers
-- payment.source: Source of funds for the payment. Always use exact account names or wallet addresses as they appear in the context - do not guess or modify names. Default to "Operating Account" only when no source is specified by the user
-- payment.beneficiary: Recipients of the payment (array format). Reference only verified recipients from context: account names, employee/contractor identifiers, wallet addresses, or predefined collections. Ensure each beneficiary exists before including
-- payment.amount: string amount or {type, value} object for dynamic amounts
+- payment.source: Source of funds for the payment. Always use the exact account slug or wallet address as they appear in the context - do not guess or modify identifiers. Default to "operating-account" only when no source is specified by the user
+- payment.beneficiary: Recipients of the payment (array format). Reference only verified recipients from context: account slugs, wallet addresses, or predefined collections. Ensure each beneficiary exists before including
+- payment.amount: Fixed string amount ("1000") or dynamic object with source and optional formula:
+  * Fixed: "1000", "500.50"
+  * Dynamic: {"source": "treasury.revenue"} 
+  * Dynamic with formula: {"source": "treasury.revenue", "formula": "* 0.1"}
+  * Dynamic with complex formula: {"source": "accounts.operating.balance", "formula": "* 0.05 + 100"}
+  * Available sources: treasury.* (revenue, expenses, netProfit, totalAssets, monthlyBurnRate, runway), 
+                      accounts.{slug}.balance, invoice.amount, employees.total-salary, contractors.total-rate
 - payment.currency: currency symbol ("USDC", "ETH", etc.) - if not specified, preserve existing or default to "USDC"
 - payment.percentages: array of percentages (must sum to 100) if action is "split"
 - conditions: array of conditions that must be met
@@ -67,10 +73,9 @@ Example 1:
         "action": "simple",
         "amount":
         {
-            "type": "dynamic",
-            "value": "invoice amount"
+            "source": "invoices.amount",
         },
-        "source": "Operating Account",
+        "source": "operating-account",
         "currency": "USDC",
         "beneficiary": ["contractors"]
     },
@@ -102,10 +107,10 @@ Example 2:
         "action": "calculation",
         "amount":
         {
-            "type": "dynamic",
-            "value": "10% of revenue"
+            "source": "treasury.revenue",
+            "formula": "* 0.1"
         },
-        "source": "Sales Revenue",
+        "source": "sales-revenue",
         "currency": "USDC",
         "beneficiary": ["Growth Fund"]
     },
@@ -137,10 +142,9 @@ Example 3:
         "action": "split",
         "amount":
         {
-            "type": "dynamic",
-            "value":"profits"
+            "source": "accounts.balance"
         },
-        "source": "Profit Sharing Pool", 
+        "source": "profit-sharing-pool", 
         "currency": "USDC",
         "beneficiary": ["Sarah Chen", "Mike Torres"],
         "percentages": [60, 40]
@@ -172,7 +176,7 @@ Example 4:
     {
         "action": "simple",
         "amount": "1000",
-        "source": "Operating Account",
+        "source": "operating-account",
         "currency": "USDC",
         "beneficiary": ["Mike Torres"]
     },
@@ -193,8 +197,11 @@ Example 5:
     "payment":
     {
         "action": "leftover",
-        "amount": "balance",
-        "source": "Operating Account",
+        "amount":
+        {
+            "source": "accounts.balance"
+        },
+        "source": "operating-account",
         "currency": "USDC",
         "beneficiary": ["Reserve Fund"]
     },
