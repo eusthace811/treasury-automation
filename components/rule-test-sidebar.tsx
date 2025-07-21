@@ -372,14 +372,14 @@ export function RuleTestSidebar() {
                                     key={`condition-${condition.source}-${condition.field}-${condition.operator}-${idx}`}
                                     className="border border-border bg-muted/40 rounded-md p-3 space-y-1"
                                   >
-                                    <div className="text-sm">
+                                    <div className="text-sm text-cyan-400">
                                       <strong>
                                         {condition.when === 'after'
                                           ? 'Post-execution:'
                                           : 'Pre-execution:'}
                                       </strong>
                                     </div>
-                                    <div className="text-sm font-medium">
+                                    <div className="text-sm font-medium text-cyan-400">
                                       {condition.description ||
                                         `${condition.source}.${condition.field} ${condition.operator} ${condition.value}`}
                                     </div>
