@@ -12,7 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cronToHuman } from '@/lib/utils/cron';
-import { RefreshCw, Clock, CheckCircle, Circle } from 'lucide-react';
+import {
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  Circle,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import type { Schedule } from '@upstash/qstash';
 
 interface ScheduleTabProps {
@@ -41,6 +48,7 @@ export function ScheduleTab({
   const [statusFilter, setStatusFilter] = useState<ScheduleStatus>('all');
   const [filteredSchedules, setFilteredSchedules] =
     useState<Schedule[]>(schedules);
+  const [expandedBodies, setExpandedBodies] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (statusFilter === 'all') {
@@ -57,7 +65,10 @@ export function ScheduleTab({
   }, [schedules, statusFilter]);
 
   const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString();
+    // If timestamp is in seconds (< year 2100), convert to milliseconds
+    // Otherwise assume it's already in milliseconds
+    const ms = timestamp < 4102444800 ? timestamp * 1000 : timestamp;
+    return new Date(ms).toLocaleString();
   };
 
   const getStatusIcon = (status: string) => {
@@ -71,6 +82,49 @@ export function ScheduleTab({
       statusColors[status as keyof typeof statusColors] ||
       'text-green-600 bg-green-100'
     );
+  };
+
+  const formatBody = (body: string): string => {
+    const isBase64 =
+      /^[A-Za-z0-9+/]*={0,2}$/.test(body) && body.length % 4 === 0;
+
+    if (isBase64 && body.length > 20) {
+      try {
+        const decoded = atob(body);
+        try {
+          const parsed = JSON.parse(decoded);
+          return JSON.stringify(parsed, null, 2);
+        } catch {
+          return decoded;
+        }
+      } catch {
+        return body;
+      }
+    }
+
+    return body;
+  };
+
+  const toggleBodyExpansion = (scheduleId: string) => {
+    setExpandedBodies((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(scheduleId)) {
+        newSet.delete(scheduleId);
+      } else {
+        newSet.add(scheduleId);
+      }
+      return newSet;
+    });
+  };
+
+  const getBodyPreview = (body: string, scheduleId: string) => {
+    const formattedBody = formatBody(body);
+    const isExpanded = expandedBodies.has(scheduleId);
+
+    if (isExpanded || formattedBody.length <= 150) {
+      return formattedBody;
+    }
+    return `${formattedBody.substring(0, 150)}...`;
   };
 
   if (loading) {
@@ -160,6 +214,9 @@ export function ScheduleTab({
         <div className="space-y-3">
           {filteredSchedules.map((schedule, index) => {
             const scheduleStatus = 'active'; // Assume active for now
+            const isBodyExpanded = expandedBodies.has(schedule.scheduleId);
+            const formattedBody = schedule.body ? formatBody(schedule.body) : '';
+            const shouldShowToggle = formattedBody.length > 150;
 
             return (
               <Card
@@ -216,6 +273,42 @@ export function ScheduleTab({
                       </p>
                     </div>
                   </div>
+
+                  {/* Body Preview */}
+                  {schedule.body && (
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-sm text-muted-foreground">
+                          RULE INSTRUCTION
+                        </span>
+                        {shouldShowToggle && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleBodyExpansion(schedule.scheduleId)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {isBodyExpanded ? (
+                              <>
+                                <ChevronUp className="size-3 mr-1" />
+                                Collapse
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="size-3 mr-1" />
+                                Expand
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <pre className="text-xs overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed text-left">
+                          {getBodyPreview(schedule.body, schedule.scheduleId)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Additional Info */}
                   {(schedule.retries || schedule.callback) && (

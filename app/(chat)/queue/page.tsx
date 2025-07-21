@@ -75,7 +75,7 @@ export default function QueuePage() {
     return (
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Queue Management</h1>
+          <h1 className="text-3xl font-bold mb-2">Queue</h1>
           <p className="text-lg text-muted-foreground">
             View and manage your treasury automation queue
           </p>
@@ -104,7 +104,7 @@ export default function QueuePage() {
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Queue Management</h1>
+        <h1 className="text-3xl font-bold mb-2">Queue</h1>
         <p className="text-lg text-muted-foreground">
           View and manage your treasury automation queue
         </p>
