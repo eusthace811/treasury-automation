@@ -49,9 +49,9 @@ export function TreasuryRule({
 }) {
   if (!result) {
     return (
-      <div className="flex flex-col gap-3 rounded-xl p-4 border-2 border-dashed border-muted-foreground/20 bg-muted/50 max-w-[600px]">
+      <div className="flex flex-col gap-3 rounded-xl p-4 border-2 border-dashed border-muted-foreground/20 bg-muted/50 max-w-screen-toast-mobile">
         <div className="flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full size-4 border-b-2 border-primary" />
           <span className="text-sm font-medium text-muted-foreground">
             {getToolLoadingMessage(toolType)}
           </span>
@@ -62,9 +62,9 @@ export function TreasuryRule({
 
   if (result.error || !result.success) {
     return (
-      <div className="flex flex-col gap-3 rounded-xl p-4 border border-red-200 bg-red-50 max-w-[600px]">
+      <div className="flex flex-col gap-3 rounded-xl p-4 border border-red-200 bg-red-50 max-w-screen-toast-mobile">
         <div className="flex items-center gap-2">
-          <CrossCircledIcon className="h-5 w-5 text-red-500" />
+          <CrossCircledIcon className="size-5 text-red-500" />
           <span className="text-sm font-semibold text-red-800">
             {getToolDisplayName(toolType)} Failed
           </span>
@@ -80,9 +80,9 @@ export function TreasuryRule({
   const { data } = result;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl p-4 border border-green-200 bg-green-50 max-w-[600px]">
+    <div className="flex flex-col gap-4 rounded-xl p-4 border border-green-200 bg-green-50 max-w-screen-toast-mobile">
       <div className="flex items-center gap-2">
-        <CheckCircledIcon className="h-5 w-5 text-green-600" />
+        <CheckCircledIcon className="size-5 text-green-600" />
         <span className="text-sm font-semibold text-green-800">
           {getToolDisplayName(toolType)} Complete
         </span>
@@ -96,7 +96,7 @@ export function TreasuryRule({
       {/* Rule Validator Result */}
       {toolType === 'ruleValidator' && (
         <div className="flex items-center gap-2">
-          <CheckCircledIcon className="h-4 w-4 text-green-600" />
+          <CheckCircledIcon className="size-4 text-green-600" />
           <span className="text-sm text-green-700">Rule validation passed</span>
         </div>
       )}
@@ -114,7 +114,7 @@ export function TreasuryRule({
       {toolType === 'ruleUpdater' && 'data' in result && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <PersonIcon className="h-4 w-4 text-green-600" />
+            <PersonIcon className="size-4 text-green-600" />
             <span className="text-sm text-green-700">
               {(result.data as any).message || 'Rule saved successfully'}
             </span>
@@ -131,7 +131,9 @@ export function TreasuryRule({
           )}
           {(result.data as any).isUpdate !== undefined && (
             <p className="text-xs text-blue-600">
-              {(result.data as any).isUpdate ? 'Updated existing rule' : 'Created new rule'}
+              {(result.data as any).isUpdate
+                ? 'Updated existing rule'
+                : 'Created new rule'}
             </p>
           )}
         </div>
@@ -153,28 +155,39 @@ function TreasuryRuleDisplay({ rule }: { rule: TreasuryRuleData }) {
   return (
     <div className="space-y-3 text-sm">
       <div className="flex items-start gap-2">
-        <ClockIcon className="h-4 w-4 text-blue-600 mt-0.5" />
+        <ClockIcon className="size-4 text-blue-600 mt-0.5" />
         <div className="flex-1">
           <span className="font-medium text-gray-800">Execution: </span>
           <div className="text-gray-700">
             {rule.execution.timing === 'once' && (
-              <span>One-time execution{rule.execution.at ? ` at ${new Date(rule.execution.at * 1000).toLocaleString()}` : ''}</span>
+              <span>
+                One-time execution
+                {rule.execution.at
+                  ? ` at ${new Date(rule.execution.at * 1000).toLocaleString()}`
+                  : ''}
+              </span>
             )}
             {rule.execution.timing === 'schedule' && (
               <div>
-                <div className="font-medium text-gray-600">{cronToHuman(rule.execution.cron || '')}</div>
-                <div className="text-xs text-gray-500 mt-1">Schedule: {rule.execution.cron}</div>
+                <div className="font-medium text-gray-600">
+                  {cronToHuman(rule.execution.cron || '')}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Schedule: {rule.execution.cron}
+                </div>
               </div>
             )}
             {rule.execution.timing === 'hook' && (
-              <span>Webhook: {rule.execution.hooks?.map((h) => h.target).join(', ')}</span>
+              <span>
+                Webhook: {rule.execution.hooks?.map((h) => h.target).join(', ')}
+              </span>
             )}
           </div>
         </div>
       </div>
 
       <div className="flex items-start gap-2">
-        <PersonIcon className="h-4 w-4 text-green-600 mt-0.5" />
+        <PersonIcon className="size-4 text-green-600 mt-0.5" />
         <div className="flex-1">
           <span className="font-medium text-gray-800">Payment: </span>
           <div className="text-gray-700">
@@ -200,7 +213,7 @@ function TreasuryRuleDisplay({ rule }: { rule: TreasuryRuleData }) {
 
       {rule.conditions && rule.conditions.length > 0 && (
         <div className="flex items-start gap-2">
-          <InfoCircledIcon className="h-4 w-4 text-purple-600 mt-0.5" />
+          <InfoCircledIcon className="size-4 text-purple-600 mt-0.5" />
           <div className="flex-1">
             <span className="font-medium text-gray-800">Conditions: </span>
             <div className="text-gray-700">
@@ -210,10 +223,15 @@ function TreasuryRuleDisplay({ rule }: { rule: TreasuryRuleData }) {
               </div>
               <div className="space-y-1">
                 {rule.conditions.map((condition, index) => (
-                  <div key={index} className="text-sm bg-purple-50 p-2 rounded border-l-2 border-purple-200">
+                  <div
+                    key={`condition-${condition.logic || ''}-${condition.field}-${condition.operator}-${condition.value}`}
+                    className="text-sm bg-purple-50 p-2 rounded border-l-2 border-purple-200"
+                  >
                     <span className="text-purple-800">
                       {condition.logic && index > 0 && (
-                        <span className="font-medium text-purple-600">{condition.logic} </span>
+                        <span className="font-medium text-purple-600">
+                          {condition.logic}{' '}
+                        </span>
                       )}
                       {formatCondition(condition)}
                     </span>
@@ -272,13 +290,13 @@ function ConflictAnalysisDisplay({
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'low':
-        return <InfoCircledIcon className="h-4 w-4" />;
+        return <InfoCircledIcon className="size-4" />;
       case 'medium':
-        return <ExclamationTriangleIcon className="h-4 w-4" />;
+        return <ExclamationTriangleIcon className="size-4" />;
       case 'high':
-        return <CrossCircledIcon className="h-4 w-4" />;
+        return <CrossCircledIcon className="size-4" />;
       default:
-        return <InfoCircledIcon className="h-4 w-4" />;
+        return <InfoCircledIcon className="size-4" />;
     }
   };
 
@@ -302,7 +320,7 @@ function ConflictAnalysisDisplay({
       <div className="flex items-center gap-2">
         {hasConflicts ? (
           <>
-            <ExclamationTriangleIcon className="h-4 w-4 text-orange-600" />
+            <ExclamationTriangleIcon className="size-4 text-orange-600" />
             <span className="font-medium text-orange-800">
               {conflictDetails?.length || 0} Conflict
               {(conflictDetails?.length || 0) !== 1 ? 's' : ''} Detected
@@ -310,7 +328,7 @@ function ConflictAnalysisDisplay({
           </>
         ) : (
           <>
-            <CheckCircledIcon className="h-4 w-4 text-green-600" />
+            <CheckCircledIcon className="size-4 text-green-600" />
             <span className="font-medium text-green-800">
               No Conflicts Found
             </span>

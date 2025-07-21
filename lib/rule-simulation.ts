@@ -1,5 +1,10 @@
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
-import { accountsData, beneficiariesData, treasuryData, invoicesData } from '@/data/mockup';
+import {
+  accountsData,
+  beneficiariesData,
+  treasuryData,
+  invoicesData,
+} from '@/data/mockup';
 
 interface SimulationResult {
   success: boolean;
@@ -35,7 +40,9 @@ interface SimulationContext {
   invoices: typeof invoicesData.invoices;
 }
 
-export async function simulateRule(ruleData: TreasuryRuleData): Promise<SimulationResult> {
+export async function simulateRule(
+  ruleData: TreasuryRuleData,
+): Promise<SimulationResult> {
   const result: SimulationResult = {
     success: false,
     payments: [],
@@ -51,7 +58,7 @@ export async function simulateRule(ruleData: TreasuryRuleData): Promise<Simulati
       accounts: accountsData?.accounts || [],
       beneficiaries: [
         ...(beneficiariesData?.employees || []),
-        ...(beneficiariesData?.contractors || [])
+        ...(beneficiariesData?.contractors || []),
       ],
       treasury: treasuryData,
       invoices: invoicesData?.invoices || [],
@@ -59,7 +66,9 @@ export async function simulateRule(ruleData: TreasuryRuleData): Promise<Simulati
 
     // Validate rule data
     if (!ruleData.execution || !ruleData.payment) {
-      result.errors.push('Invalid rule data: missing execution or payment configuration');
+      result.errors.push(
+        'Invalid rule data: missing execution or payment configuration',
+      );
       return result;
     }
 
@@ -76,28 +85,40 @@ export async function simulateRule(ruleData: TreasuryRuleData): Promise<Simulati
 
     // Find source account (by name, ID, or wallet address)
     const sourceAccount = context.accounts.find(
-      (account) => account && (
-        account.name === ruleData.payment.source || 
-        account.id === ruleData.payment.source ||
-        account.address === ruleData.payment.source
-      )
+      (account) =>
+        account &&
+        (account.name === ruleData.payment.source ||
+          account.id === ruleData.payment.source ||
+          account.address === ruleData.payment.source),
     );
 
     if (!sourceAccount) {
-      result.errors.push(`Source account '${ruleData.payment.source}' not found`);
+      result.errors.push(
+        `Source account '${ruleData.payment.source}' not found`,
+      );
       return result;
     }
 
     // Resolve beneficiaries (can be collections, individuals, or addresses)
-    const beneficiaries = resolveBeneficiaries(ruleData.payment.beneficiary, context, result);
+    const beneficiaries = resolveBeneficiaries(
+      ruleData.payment.beneficiary,
+      context,
+      result,
+    );
 
     // Evaluate conditions
     for (const condition of ruleData.conditions) {
-      const conditionResult = await evaluateCondition(condition, context, result);
+      const conditionResult = await evaluateCondition(
+        condition,
+        context,
+        result,
+      );
       result.conditions.push(conditionResult);
-      
+
       if (!conditionResult.passed && condition.when === 'before') {
-        result.errors.push(`Pre-condition failed: ${condition.description || condition.field}`);
+        result.errors.push(
+          `Pre-condition failed: ${condition.description || condition.field}`,
+        );
       }
     }
 
@@ -107,8 +128,12 @@ export async function simulateRule(ruleData: TreasuryRuleData): Promise<Simulati
     }
 
     // Calculate payment amounts
-    const paymentResult = calculatePayments(ruleData.payment, sourceAccount, beneficiaries);
-    
+    const paymentResult = calculatePayments(
+      ruleData.payment,
+      sourceAccount,
+      beneficiaries,
+    );
+
     if (paymentResult.error) {
       result.errors.push(paymentResult.error);
       return result;
@@ -118,55 +143,61 @@ export async function simulateRule(ruleData: TreasuryRuleData): Promise<Simulati
 
     // Check account balance sufficiency
     const totalAmount = result.payments.reduce((sum, payment) => {
-      return sum + parseFloat(payment.amount);
+      return sum + Number.parseFloat(payment.amount);
     }, 0);
 
     if (totalAmount > sourceAccount.balance) {
       result.errors.push(
-        `Insufficient balance: ${sourceAccount.balance} ${sourceAccount.currency} available, ${totalAmount} ${ruleData.payment.currency} required`
+        `Insufficient balance: ${sourceAccount.balance} ${sourceAccount.currency} available, ${totalAmount} ${ruleData.payment.currency} required`,
       );
       return result;
     }
 
     if (totalAmount > sourceAccount.balance * 0.8) {
       result.warnings.push(
-        `High balance usage: Using ${((totalAmount / sourceAccount.balance) * 100).toFixed(1)}% of available balance`
+        `High balance usage: Using ${((totalAmount / sourceAccount.balance) * 100).toFixed(1)}% of available balance`,
       );
     }
 
     result.success = result.errors.length === 0;
   } catch (error) {
-    result.errors.push(`Simulation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    result.errors.push(
+      `Simulation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 
   return result;
 }
 
-function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationContext, result: SimulationResult) {
+function resolveBeneficiaries(
+  beneficiaryIds: string[],
+  context: SimulationContext,
+  result: SimulationResult,
+) {
   const resolvedBeneficiaries: Array<{ id: string; data: any }> = [];
 
   for (const beneficiaryId of beneficiaryIds) {
     // Handle collections
     if (beneficiaryId === 'contractors') {
       const contractors = beneficiariesData?.contractors || [];
-      
+
       // Add to collections for display
       result.collections.push({
         name: 'contractors',
         type: 'Contractors',
-        items: contractors.map(contractor => ({
+        items: contractors.map((contractor) => ({
           id: contractor.id,
           name: contractor.name,
           details: {
             email: contractor.email,
             role: contractor.role,
             walletAddress: contractor.walletAddress,
-            status: contractor.status
-          }
-        }))
+            status: contractor.status,
+          },
+        })),
       });
 
-      contractors.forEach(contractor => {
+      contractors.forEach((contractor) => {
         resolvedBeneficiaries.push({ id: contractor.id, data: contractor });
       });
       continue;
@@ -174,12 +205,12 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
 
     if (beneficiaryId === 'employees') {
       const employees = beneficiariesData?.employees || [];
-      
+
       // Add to collections for display
       result.collections.push({
         name: 'employees',
         type: 'Employees',
-        items: employees.map(employee => ({
+        items: employees.map((employee) => ({
           id: employee.id,
           name: employee.name,
           details: {
@@ -187,12 +218,12 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
             role: employee.role,
             department: employee.department,
             walletAddress: employee.walletAddress,
-            status: employee.status
-          }
-        }))
+            status: employee.status,
+          },
+        })),
       });
 
-      employees.forEach(employee => {
+      employees.forEach((employee) => {
         resolvedBeneficiaries.push({ id: employee.id, data: employee });
       });
       continue;
@@ -200,13 +231,15 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
 
     if (beneficiaryId === 'approved_invoices' || beneficiaryId === 'invoices') {
       const allInvoices = context.invoices;
-      const approvedInvoices = allInvoices.filter(invoice => invoice.status === 'approved');
-      
+      const approvedInvoices = allInvoices.filter(
+        (invoice) => invoice.status === 'approved',
+      );
+
       // Add to collections for display
       result.collections.push({
         name: 'invoices',
         type: 'Invoices',
-        items: allInvoices.map(invoice => ({
+        items: allInvoices.map((invoice) => ({
           id: invoice.id,
           name: `${invoice.vendorName} - ${invoice.description}`,
           details: {
@@ -215,35 +248,35 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
             status: invoice.status,
             approvedBy: invoice.approvedBy,
             vendorAddress: invoice.vendorAddress,
-            dueDate: new Date(invoice.dueDate * 1000).toLocaleDateString()
-          }
-        }))
+            dueDate: new Date(invoice.dueDate * 1000).toLocaleDateString(),
+          },
+        })),
       });
 
       // Only process approved invoices for payments
-      approvedInvoices.forEach(invoice => {
+      approvedInvoices.forEach((invoice) => {
         // Try to find the beneficiary by vendor name or address
-        const beneficiary = context.beneficiaries.find(b => 
-          b && (
-            b.name === invoice.vendorName || 
-            b.walletAddress === invoice.vendorAddress ||
-            b.email === invoice.vendorName
-          )
+        const beneficiary = context.beneficiaries.find(
+          (b) =>
+            b &&
+            (b.name === invoice.vendorName ||
+              b.walletAddress === invoice.vendorAddress ||
+              b.email === invoice.vendorName),
         );
-        
+
         if (beneficiary) {
           resolvedBeneficiaries.push({ id: beneficiary.id, data: beneficiary });
         } else {
           // Create a temporary beneficiary from invoice data
-          resolvedBeneficiaries.push({ 
-            id: invoice.id, 
-            data: { 
+          resolvedBeneficiaries.push({
+            id: invoice.id,
+            data: {
               id: invoice.id,
-              name: invoice.vendorName, 
+              name: invoice.vendorName,
               walletAddress: invoice.vendorAddress,
               invoiceAmount: invoice.amount,
-              currency: invoice.currency
-            } 
+              currency: invoice.currency,
+            },
           });
         }
       });
@@ -251,13 +284,13 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
     }
 
     // Handle individual lookups - try ID, name, email, wallet address
-    const beneficiary = context.beneficiaries.find(b => 
-      b && (
-        b.id === beneficiaryId || 
-        b.name === beneficiaryId || 
-        b.email === beneficiaryId ||
-        b.walletAddress === beneficiaryId
-      )
+    const beneficiary = context.beneficiaries.find(
+      (b) =>
+        b &&
+        (b.id === beneficiaryId ||
+          b.name === beneficiaryId ||
+          b.email === beneficiaryId ||
+          b.walletAddress === beneficiaryId),
     );
 
     if (beneficiary) {
@@ -265,16 +298,18 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
     } else {
       // Check if it's a wallet address without matching beneficiary
       if (beneficiaryId.startsWith('0x')) {
-        resolvedBeneficiaries.push({ 
-          id: beneficiaryId, 
-          data: { 
-            id: beneficiaryId, 
-            name: `Wallet ${beneficiaryId.slice(0, 8)}...`, 
-            walletAddress: beneficiaryId 
-          } 
+        resolvedBeneficiaries.push({
+          id: beneficiaryId,
+          data: {
+            id: beneficiaryId,
+            name: `Wallet ${beneficiaryId.slice(0, 8)}...`,
+            walletAddress: beneficiaryId,
+          },
         });
       } else {
-        result.warnings.push(`Beneficiary '${beneficiaryId}' not found in data`);
+        result.warnings.push(
+          `Beneficiary '${beneficiaryId}' not found in data`,
+        );
         // Still add it so payment calculation can proceed
         resolvedBeneficiaries.push({ id: beneficiaryId, data: null });
       }
@@ -284,11 +319,17 @@ function resolveBeneficiaries(beneficiaryIds: string[], context: SimulationConte
   return resolvedBeneficiaries;
 }
 
-async function evaluateCondition(condition: any, context: SimulationContext, simulationResult: SimulationResult) {
+async function evaluateCondition(
+  condition: any,
+  context: SimulationContext,
+  simulationResult: SimulationResult,
+) {
   const result = {
-    description: condition.description || `${condition.source}.${condition.field} ${condition.operator} ${condition.value}`,
+    description:
+      condition.description ||
+      `${condition.source}.${condition.field} ${condition.operator} ${condition.value}`,
     passed: false,
-    value: null,
+    value: null as any,
   };
 
   try {
@@ -311,7 +352,7 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
         simulationResult.collections.push({
           name: 'invoices_for_condition',
           type: 'Invoices (for condition check)',
-          items: context.invoices.map(invoice => ({
+          items: context.invoices.map((invoice) => ({
             id: invoice.id,
             name: `${invoice.vendorName} - ${invoice.description}`,
             details: {
@@ -320,9 +361,9 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
               status: invoice.status,
               approvedBy: invoice.approvedBy,
               vendorAddress: invoice.vendorAddress,
-              dueDate: new Date(invoice.dueDate * 1000).toLocaleDateString()
-            }
-          }))
+              dueDate: new Date(invoice.dueDate * 1000).toLocaleDateString(),
+            },
+          })),
         });
         break;
       case 'contractors':
@@ -331,16 +372,16 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
         simulationResult.collections.push({
           name: 'contractors_for_condition',
           type: 'Contractors (for condition check)',
-          items: sourceData.map(contractor => ({
+          items: sourceData.map((contractor: any) => ({
             id: contractor.id,
             name: contractor.name,
             details: {
               email: contractor.email,
               role: contractor.role,
               walletAddress: contractor.walletAddress,
-              status: contractor.status
-            }
-          }))
+              status: contractor.status,
+            },
+          })),
         });
         break;
       case 'employees':
@@ -349,7 +390,7 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
         simulationResult.collections.push({
           name: 'employees_for_condition',
           type: 'Employees (for condition check)',
-          items: sourceData.map(employee => ({
+          items: sourceData.map((employee: any) => ({
             id: employee.id,
             name: employee.name,
             details: {
@@ -357,17 +398,27 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
               role: employee.role,
               department: employee.department,
               walletAddress: employee.walletAddress,
-              status: employee.status
-            }
-          }))
+              status: employee.status,
+            },
+          })),
         });
         break;
       default:
         // Try to find specific account, beneficiary, or invoice
-        sourceData = 
-          context.accounts.find(a => a && (a.name === condition.source || a.id === condition.source)) ||
-          context.beneficiaries.find(b => b && (b.name === condition.source || b.id === condition.source)) ||
-          context.invoices.find(i => i && (i.id === condition.source || i.vendorName === condition.source));
+        sourceData =
+          context.accounts.find(
+            (a) =>
+              a && (a.name === condition.source || a.id === condition.source),
+          ) ||
+          context.beneficiaries.find(
+            (b) =>
+              b && (b.name === condition.source || b.id === condition.source),
+          ) ||
+          context.invoices.find(
+            (i) =>
+              i &&
+              (i.id === condition.source || i.vendorName === condition.source),
+          );
     }
 
     if (!sourceData) {
@@ -377,28 +428,35 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
 
     // Extract field value with special handling for complex conditions
     let fieldValue: any;
-    
+
     // Filter collections based on conditions first
     if (Array.isArray(sourceData)) {
       let filteredData = sourceData;
-      
+
       // Apply filtering based on field and value
       if (condition.field === 'status' && condition.value === 'approved') {
-        filteredData = sourceData.filter(item => item && item.status === 'approved');
-      } else if (condition.field === 'approved' || (condition.description?.toLowerCase().includes('approved'))) {
-        filteredData = sourceData.filter(item => item && item.status === 'approved');
+        filteredData = sourceData.filter(
+          (item) => item && item.status === 'approved',
+        );
+      } else if (
+        condition.field === 'approved' ||
+        condition.description?.toLowerCase().includes('approved')
+      ) {
+        filteredData = sourceData.filter(
+          (item) => item && item.status === 'approved',
+        );
       } else {
         // For other fields, filter based on the condition
-        filteredData = sourceData.filter(item => {
+        filteredData = sourceData.filter((item) => {
           if (!item) return false;
           const itemValue = getNestedValue(item, condition.field);
-          
+
           switch (condition.operator) {
             case '==':
-            case '=':
-              return itemValue == condition.value;
+            case '===':
+              return itemValue === condition.value;
             case '!=':
-              return itemValue != condition.value;
+              return itemValue !== condition.value;
             case '>':
               return Number(itemValue) > Number(condition.value);
             case '<':
@@ -408,7 +466,9 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
             case '<=':
               return Number(itemValue) <= Number(condition.value);
             case 'contains':
-              return String(itemValue).toLowerCase().includes(String(condition.value).toLowerCase());
+              return String(itemValue)
+                .toLowerCase()
+                .includes(String(condition.value).toLowerCase());
             default:
               return true;
           }
@@ -416,57 +476,68 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
       }
 
       // Update the collection to show only filtered items
-      const collectionIndex = simulationResult.collections.findIndex(c => 
-        c.name.includes(condition.source) && c.name.includes('condition')
+      const collectionIndex = simulationResult.collections.findIndex(
+        (c) =>
+          c.name.includes(condition.source) && c.name.includes('condition'),
       );
-      
+
       if (collectionIndex !== -1) {
-        const filteredItems = filteredData.map(item => ({
+        const filteredItems = filteredData.map((item) => ({
           id: item.id,
-          name: condition.source === 'invoices' ? `${item.vendorName} - ${item.description}` : item.name,
-          details: condition.source === 'invoices' ? {
-            amount: item.amount,
-            currency: item.currency,
-            status: item.status,
-            approvedBy: item.approvedBy,
-            vendorAddress: item.vendorAddress,
-            dueDate: new Date(item.dueDate * 1000).toLocaleDateString()
-          } : {
-            email: item.email,
-            role: item.role,
-            walletAddress: item.walletAddress,
-            status: item.status,
-            ...(item.department && { department: item.department })
-          }
+          name:
+            condition.source === 'invoices'
+              ? `${item.vendorName} - ${item.description}`
+              : item.name,
+          details:
+            condition.source === 'invoices'
+              ? {
+                  amount: item.amount,
+                  currency: item.currency,
+                  status: item.status,
+                  approvedBy: item.approvedBy,
+                  vendorAddress: item.vendorAddress,
+                  dueDate: new Date(item.dueDate * 1000).toLocaleDateString(),
+                }
+              : {
+                  email: item.email,
+                  role: item.role,
+                  walletAddress: item.walletAddress,
+                  status: item.status,
+                  ...(item.department && { department: item.department }),
+                },
         }));
 
         simulationResult.collections[collectionIndex] = {
           ...simulationResult.collections[collectionIndex],
           type: `${simulationResult.collections[collectionIndex].type.replace(' (for condition check)', '')} (filtered: ${condition.field} ${condition.operator} ${condition.value})`,
-          items: filteredItems
+          items: filteredItems,
         };
       }
 
       // Evaluate the condition based on filtered results
-      result.value = `Found ${filteredData.length} matching items: ${filteredData.map(i => i.vendorName || i.name).join(', ')}`;
+      result.value = `Found ${filteredData.length} matching items: ${filteredData.map((i) => i.vendorName || i.name).join(', ')}`;
       result.passed = filteredData.length > 0;
-      
+
       return result;
     }
-    
+
     // Handle single item conditions
-    if (sourceData && typeof sourceData === 'object' && !Array.isArray(sourceData)) {
+    if (
+      sourceData &&
+      typeof sourceData === 'object' &&
+      !Array.isArray(sourceData)
+    ) {
       fieldValue = getNestedValue(sourceData, condition.field);
       result.value = `${sourceData.vendorName || sourceData.name || 'Item'}: ${fieldValue}`;
-      
+
       // Evaluate single item condition
       switch (condition.operator) {
         case '==':
-        case '=':
-          result.passed = fieldValue == condition.value;
+        case '===':
+          result.passed = fieldValue === condition.value;
           break;
         case '!=':
-          result.passed = fieldValue != condition.value;
+          result.passed = fieldValue !== condition.value;
           break;
         case '>':
           result.passed = Number(fieldValue) > Number(condition.value);
@@ -481,15 +552,17 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
           result.passed = Number(fieldValue) <= Number(condition.value);
           break;
         case 'contains':
-          result.passed = String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase());
+          result.passed = String(fieldValue)
+            .toLowerCase()
+            .includes(String(condition.value).toLowerCase());
           break;
         default:
           result.passed = Boolean(fieldValue);
       }
-      
+
       return result;
     }
-    
+
     // Default field extraction
     fieldValue = getNestedValue(sourceData, condition.field);
     result.value = fieldValue;
@@ -509,14 +582,16 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
         result.passed = Number(fieldValue) <= Number(condition.value);
         break;
       case '==':
-      case '=':
-        result.passed = fieldValue == condition.value;
+      case '===':
+        result.passed = fieldValue === condition.value;
         break;
       case '!=':
-        result.passed = fieldValue != condition.value;
+        result.passed = fieldValue !== condition.value;
         break;
       case 'contains':
-        result.passed = String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase());
+        result.passed = String(fieldValue)
+          .toLowerCase()
+          .includes(String(condition.value).toLowerCase());
         break;
       default:
         result.description = `Unknown operator: ${condition.operator}`;
@@ -528,7 +603,11 @@ async function evaluateCondition(condition: any, context: SimulationContext, sim
   return result;
 }
 
-function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[]) {
+function calculatePayments(
+  payment: any,
+  sourceAccount: any,
+  beneficiaries: any[],
+) {
   const result = {
     payments: [] as any[],
     error: null as string | null,
@@ -539,13 +618,13 @@ function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[
 
     // Calculate base amount
     if (typeof payment.amount === 'string') {
-      totalAmount = parseFloat(payment.amount);
+      totalAmount = Number.parseFloat(payment.amount);
     } else if (typeof payment.amount === 'object') {
       // Handle dynamic amounts (calculations)
       totalAmount = calculateDynamicAmount(payment.amount, sourceAccount);
     }
 
-    if (isNaN(totalAmount) || totalAmount <= 0) {
+    if (Number.isNaN(totalAmount) || totalAmount <= 0) {
       result.error = 'Invalid payment amount';
       return result;
     }
@@ -555,7 +634,7 @@ function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[
       case 'simple':
         result.payments.push({
           from: sourceAccount.name,
-          to: beneficiaries.map(b => b.id),
+          to: beneficiaries.map((b) => b.id),
           amount: totalAmount.toString(),
           currency: payment.currency,
           action: payment.action,
@@ -563,8 +642,12 @@ function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[
         break;
 
       case 'split':
-        if (!payment.percentages || payment.percentages.length !== beneficiaries.length) {
-          result.error = 'Split payments require percentages matching beneficiary count';
+        if (
+          !payment.percentages ||
+          payment.percentages.length !== beneficiaries.length
+        ) {
+          result.error =
+            'Split payments require percentages matching beneficiary count';
           return result;
         }
 
@@ -583,7 +666,10 @@ function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[
       case 'calculation':
         // For calculations, create individual payments based on calculation logic
         beneficiaries.forEach((beneficiary) => {
-          const calculatedAmount = calculateBeneficiaryAmount(payment.amount, beneficiary.data);
+          const calculatedAmount = calculateBeneficiaryAmount(
+            payment.amount,
+            beneficiary.data,
+          );
           result.payments.push({
             from: sourceAccount.name,
             to: [beneficiary.id],
@@ -594,17 +680,21 @@ function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[
         });
         break;
 
-      case 'leftover':
+      case 'leftover': {
         // Calculate leftover amount after other operations
-        const leftoverAmount = calculateLeftoverAmount(totalAmount, sourceAccount);
+        const leftoverAmount = calculateLeftoverAmount(
+          totalAmount,
+          sourceAccount,
+        );
         result.payments.push({
           from: sourceAccount.name,
-          to: beneficiaries.map(b => b.id),
+          to: beneficiaries.map((b) => b.id),
           amount: leftoverAmount.toString(),
           currency: payment.currency,
           action: payment.action,
         });
         break;
+      }
 
       default:
         result.error = `Unknown payment action: ${payment.action}`;
@@ -619,10 +709,15 @@ function calculatePayments(payment: any, sourceAccount: any, beneficiaries: any[
 function calculateDynamicAmount(amountConfig: any, sourceAccount: any): number {
   // Handle dynamic amount calculations
   if (amountConfig.type === 'percentage') {
-    return (sourceAccount.balance * parseFloat(amountConfig.value)) / 100;
+    return (
+      (sourceAccount.balance * Number.parseFloat(amountConfig.value)) / 100
+    );
   } else if (amountConfig.type === 'calculation') {
     // Simple calculation support
-    const expression = amountConfig.value.replace(/balance/g, sourceAccount.balance.toString());
+    const expression = amountConfig.value.replace(
+      /balance/g,
+      sourceAccount.balance.toString(),
+    );
     try {
       // Basic expression evaluation (only for safe math operations)
       return Function(`"use strict"; return (${expression})`)();
@@ -630,10 +725,13 @@ function calculateDynamicAmount(amountConfig: any, sourceAccount: any): number {
       return 0;
     }
   }
-  return parseFloat(amountConfig.value) || 0;
+  return Number.parseFloat(amountConfig.value) || 0;
 }
 
-function calculateBeneficiaryAmount(amountConfig: any, beneficiary: any): number {
+function calculateBeneficiaryAmount(
+  amountConfig: any,
+  beneficiary: any,
+): number {
   // Calculate amount based on beneficiary data (e.g., salary, hours worked)
   if (beneficiary?.salary) {
     return beneficiary.salary;
@@ -641,10 +739,16 @@ function calculateBeneficiaryAmount(amountConfig: any, beneficiary: any): number
   return 0;
 }
 
-function calculateLeftoverAmount(totalAmount: number, sourceAccount: any): number {
+function calculateLeftoverAmount(
+  totalAmount: number,
+  sourceAccount: any,
+): number {
   // Calculate leftover amount after reserving some balance
   const reservePercentage = 0.1; // Keep 10% as reserve
-  return Math.max(0, sourceAccount.balance - (sourceAccount.balance * reservePercentage));
+  return Math.max(
+    0,
+    sourceAccount.balance - sourceAccount.balance * reservePercentage,
+  );
 }
 
 function getNestedValue(obj: any, path: string): any {

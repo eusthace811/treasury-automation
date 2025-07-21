@@ -323,7 +323,7 @@ export function RuleTestSidebar() {
                                 Memo:
                               </span>
                               <div className="text-sm text-muted-foreground ml-2 italic">
-                                "{ruleData.memo}"
+                                &ldquo;{ruleData.memo}&rdquo;
                               </div>
                             </div>
                           </>

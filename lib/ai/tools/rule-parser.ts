@@ -1,5 +1,4 @@
-import { tool } from 'ai';
-import { generateObject } from 'ai';
+import { tool, generateObject } from 'ai';
 import { z } from 'zod';
 import { treasuryRuleSchema } from '@/lib/treasury/schema';
 

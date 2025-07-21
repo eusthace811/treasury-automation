@@ -1,11 +1,11 @@
-import cronstrue from 'cronstrue';
+import { toString as cronToString } from 'cronstrue';
 
 /**
  * Convert cron expressions to human-readable descriptions
  */
 export function cronToHuman(cron: string): string {
   const parts = cron.trim().split(/\s+/);
-  
+
   // Handle Unix cron format (5 fields)
   if (parts.length !== 5) {
     return `Custom schedule: ${cron}`;
@@ -13,18 +13,17 @@ export function cronToHuman(cron: string): string {
 
   try {
     // Use cronstrue library for accurate human-readable descriptions
-    return cronstrue.toString(cron, {
+    return cronToString(cron, {
       throwExceptionOnParseError: true,
       verbose: false,
       dayOfWeekStartIndexZero: true, // Sunday = 0 (Unix standard)
-      use24HourTimeFormat: true
+      use24HourTimeFormat: true,
     });
   } catch (error) {
     // Fallback if cronstrue fails to parse
     return `Custom schedule: ${cron}`;
   }
 }
-
 
 /**
  * Format condition for human reading
@@ -42,7 +41,7 @@ export function formatCondition(condition: {
 
   const { field, operator, value, source } = condition;
   const sourceText = source ? `${source} ` : '';
-  
+
   const operatorMap: Record<string, string> = {
     '==': 'equals',
     '!=': 'does not equal',
@@ -50,18 +49,21 @@ export function formatCondition(condition: {
     '>=': 'is greater than or equal to',
     '<': 'is less than',
     '<=': 'is less than or equal to',
-    'contains': 'contains',
-    'not_contains': 'does not contain',
-    'in': 'is in',
-    'not_in': 'is not in',
+    contains: 'contains',
+    not_contains: 'does not contain',
+    in: 'is in',
+    not_in: 'is not in',
   };
 
   const operatorText = operatorMap[operator] || operator;
-  const valueText = typeof value === 'boolean' 
-    ? (value ? 'true' : 'false')
-    : Array.isArray(value) 
-      ? value.join(', ')
-      : String(value);
+  const valueText =
+    typeof value === 'boolean'
+      ? value
+        ? 'true'
+        : 'false'
+      : Array.isArray(value)
+        ? value.join(', ')
+        : String(value);
 
   return `${sourceText}${field} ${operatorText} ${valueText}`;
 }
@@ -78,7 +80,7 @@ export function formatPayment(payment: {
   percentages?: number[];
 }): string {
   const { action, source, amount, currency, beneficiary } = payment;
-  
+
   // Format amount
   let amountText = '';
   if (typeof amount === 'string') {
@@ -93,7 +95,8 @@ export function formatPayment(payment: {
     } else if (amount.type === 'percentage' && amount.value) {
       amountText = `${amount.value}% of source balance`;
     } else if (amount.type === 'string' && amount.value) {
-      amountText = amount.value === 'unspecified' ? 'the specified amount' : amount.value;
+      amountText =
+        amount.value === 'unspecified' ? 'the specified amount' : amount.value;
     } else {
       amountText = 'the amount';
     }
@@ -104,31 +107,37 @@ export function formatPayment(payment: {
   }
 
   // Format beneficiaries
-  const beneficiaryText = beneficiary.length === 1 
-    ? beneficiary[0] 
-    : beneficiary.length === 2
-      ? `${beneficiary[0]} and ${beneficiary[1]}`
-      : `${beneficiary.slice(0, -1).join(', ')}, and ${beneficiary[beneficiary.length - 1]}`;
+  const beneficiaryText =
+    beneficiary.length === 1
+      ? beneficiary[0]
+      : beneficiary.length === 2
+        ? `${beneficiary[0]} and ${beneficiary[1]}`
+        : `${beneficiary.slice(0, -1).join(', ')}, and ${beneficiary[beneficiary.length - 1]}`;
 
   // Format based on action type
   switch (action) {
     case 'simple':
       return `Pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
-    
+
     case 'split':
-      if (payment.percentages && payment.percentages.length === beneficiary.length) {
-        const splits = beneficiary.map((b, i) => `${b} (${payment.percentages![i]}%)`).join(', ');
+      if (
+        payment.percentages &&
+        payment.percentages.length === beneficiary.length
+      ) {
+        const splits = beneficiary
+          .map((b, i) => `${b} (${payment.percentages?.[i] ?? 0}%)`)
+          .join(', ');
         return `Split ${amountText} in ${currency} from ${source} between: ${splits}`;
       }
       return `Split ${amountText} in ${currency} from ${source} between ${beneficiaryText}`;
-    
+
     case 'calculation':
       // For calculation actions, show the detailed calculation formula
       return `Calculate and pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
-    
+
     case 'leftover':
       return `Distribute remaining ${currency} from ${source} to ${beneficiaryText}`;
-    
+
     default:
       return `Pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
   }
