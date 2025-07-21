@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:upstash.com)",
+      "WebFetch(domain:docs.upstash.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm info:*)",
+      "Bash(npm ls:*)",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  }
+}
