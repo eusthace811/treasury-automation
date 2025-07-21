@@ -99,11 +99,11 @@ export function RuleTestSidebar() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-3/4 bg-background border-l shadow-xl z-50 overflow-hidden"
+            className="fixed right-0 top-0 h-full w-3/4 bg-card border-l border-border shadow-xl z-50 overflow-hidden"
           >
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30">
                 <div>
                   <h2 className="text-xl font-semibold">Test Rule</h2>
                   <p className="text-sm text-muted-foreground">
@@ -122,7 +122,7 @@ export function RuleTestSidebar() {
               {/* Content - Two Column Layout */}
               <div className="flex-1 flex overflow-hidden">
                 {/* Left Column - Rule Overview */}
-                <div className="w-1/2 p-6 space-y-6 overflow-y-auto border-r">
+                <div className="w-1/2 p-6 space-y-6 overflow-y-auto border-r border-border bg-background/50">
                   {/* Rule Overview */}
                   {ruleData && (
                     <Card>
@@ -192,31 +192,37 @@ export function RuleTestSidebar() {
                             </Badge>
                           </div>
 
-                          <div className="text-sm text-muted-foreground ml-2 space-y-1">
+                          <div className="text-sm text-muted-foreground ml-2 space-y-2 bg-muted/20 p-3 rounded">
                             <div>
-                              <strong>Source:</strong>{' '}
-                              <span className="uppercase">
+                              <strong className="text-foreground/80">
+                                Source:
+                              </strong>{' '}
+                              <span className="uppercase font-mono bg-secondary/50 px-2 py-1 rounded text-xs">
                                 {ruleData.payment.source}
                               </span>
                             </div>
                             <div>
-                              <strong>Amount:</strong>{' '}
-                              {formatAmount(ruleData.payment.amount)}{' '}
-                              {ruleData.payment.currency}
+                              <strong className="text-foreground/80">
+                                Amount:
+                              </strong>{' '}
+                              <span className="font-mono">
+                                {formatAmount(ruleData.payment.amount)}{' '}
+                                {ruleData.payment.currency}
+                              </span>
                             </div>
 
                             {ruleData.payment.action === 'split' &&
                               ruleData.payment.percentages && (
                                 <div className="mt-2">
                                   <strong>Split Distribution:</strong>
-                                  <div className="ml-2 space-y-1 mt-1">
+                                  <div className="ml-2 space-y-2 mt-2 bg-muted/20 p-2 rounded">
                                     {ruleData.payment.beneficiary.map(
                                       (beneficiary, idx) => (
                                         <div
                                           key={`beneficiary-${beneficiary}`}
-                                          className="flex justify-between items-center"
+                                          className="flex justify-between items-center p-2 bg-background/60 rounded border border-border"
                                         >
-                                          <span className="truncate uppercase">
+                                          <span className="truncate uppercase font-mono text-xs">
                                             {beneficiary}
                                           </span>
                                           <Badge variant="secondary">
@@ -233,14 +239,19 @@ export function RuleTestSidebar() {
                               )}
 
                             {ruleData.payment.action === 'simple' && (
-                              <div className="space-y-1">
-                                <strong>Beneficiary:</strong>
-                                <div className="ml-2">
+                              <div className="space-y-2">
+                                <strong className="text-foreground/80">
+                                  Beneficiary:
+                                </strong>
+                                <div className="ml-2 space-y-1 bg-muted/20 p-2 rounded">
                                   {ruleData.payment.beneficiary.map(
                                     (beneficiary, idx) => (
-                                      <div key={`beneficiary-${beneficiary}`}>
-                                        •{' '}
-                                        <span className="uppercase">
+                                      <div
+                                        key={`beneficiary-${beneficiary}`}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <span className="w-2 h-2 bg-primary/60 rounded-full" />
+                                        <span className="uppercase font-mono text-xs bg-secondary/50 px-2 py-1 rounded">
                                           {beneficiary}
                                         </span>
                                       </div>
@@ -270,7 +281,7 @@ export function RuleTestSidebar() {
                                 {ruleData.conditions.map((condition, idx) => (
                                   <div
                                     key={`condition-${condition.source}-${condition.field}-${condition.operator}-${idx}`}
-                                    className="border rounded-md p-3 space-y-1"
+                                    className="border border-border bg-muted/40 rounded-md p-3 space-y-1"
                                   >
                                     <div className="text-sm">
                                       <strong>
@@ -283,24 +294,40 @@ export function RuleTestSidebar() {
                                       {condition.description ||
                                         `${condition.source}.${condition.field} ${condition.operator} ${condition.value}`}
                                     </div>
-                                    <div className="text-xs text-muted-foreground space-y-1">
+                                    <div className="text-xs text-muted-foreground space-y-1 bg-muted/20 p-2 rounded">
                                       <div>
-                                        <strong>Source:</strong>{' '}
-                                        {condition.source}
+                                        <strong className="text-foreground/80">
+                                          Source:
+                                        </strong>{' '}
+                                        <span className="font-mono">
+                                          {condition.source}
+                                        </span>
                                       </div>
                                       <div>
-                                        <strong>Field:</strong>{' '}
-                                        {condition.field}
+                                        <strong className="text-foreground/80">
+                                          Field:
+                                        </strong>{' '}
+                                        <span className="font-mono">
+                                          {condition.field}
+                                        </span>
                                       </div>
                                       <div>
-                                        <strong>Condition:</strong>{' '}
-                                        {condition.operator}{' '}
-                                        {JSON.stringify(condition.value)}
+                                        <strong className="text-foreground/80">
+                                          Condition:
+                                        </strong>{' '}
+                                        <span className="font-mono">
+                                          {condition.operator}{' '}
+                                          {JSON.stringify(condition.value)}
+                                        </span>
                                       </div>
                                       {condition.logic && (
                                         <div>
-                                          <strong>Logic:</strong>{' '}
-                                          {condition.logic}
+                                          <strong className="text-foreground/80">
+                                            Logic:
+                                          </strong>{' '}
+                                          <span className="font-mono">
+                                            {condition.logic}
+                                          </span>
                                         </div>
                                       )}
                                     </div>
@@ -319,7 +346,7 @@ export function RuleTestSidebar() {
                               <span className="text-sm font-semibold">
                                 Memo:
                               </span>
-                              <div className="text-sm text-muted-foreground ml-2 italic">
+                              <div className="text-sm text-muted-foreground ml-2 italic bg-muted/30 p-3 rounded border-l-2 border-primary/30">
                                 &ldquo;{ruleData.memo}&rdquo;
                               </div>
                             </div>
@@ -353,7 +380,7 @@ export function RuleTestSidebar() {
                 </div>
 
                 {/* Right Column - Simulation Results */}
-                <div className="w-1/2 p-6 overflow-y-auto">
+                <div className="w-1/2 p-6 overflow-y-auto bg-muted/20">
                   <div className="space-y-4">
                     {/* Simulation Results Header */}
                     <div className="flex items-center gap-2 mb-6">
@@ -386,12 +413,14 @@ export function RuleTestSidebar() {
                     {/* Show placeholder when no results */}
                     {!simulationResult && (
                       <div className="flex items-center justify-center h-64 text-muted-foreground">
-                        <div className="text-center">
+                        <div className="text-center p-8 rounded-lg bg-muted/30 border border-border">
                           <PlayIcon
                             size={48}
-                            className="mx-auto mb-4 opacity-50"
+                            className="mx-auto mb-4 opacity-60"
                           />
-                          <p>Run a simulation to see results here</p>
+                          <p className="text-sm">
+                            Run a simulation to see results here
+                          </p>
                         </div>
                       </div>
                     )}
@@ -408,11 +437,11 @@ export function RuleTestSidebar() {
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <ul className="space-y-1">
+                              <ul className="space-y-2">
                                 {simulationResult.errors.map((error, idx) => (
                                   <li
                                     key={`error-${error}`}
-                                    className="text-sm text-destructive"
+                                    className="text-sm text-destructive bg-destructive/10 p-2 rounded border-l-2 border-destructive"
                                   >
                                     • {error}
                                   </li>
@@ -431,12 +460,12 @@ export function RuleTestSidebar() {
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <ul className="space-y-1">
+                              <ul className="space-y-2">
                                 {simulationResult.warnings.map(
                                   (warning, idx) => (
                                     <li
                                       key={`warning-${warning}`}
-                                      className="text-sm text-yellow-600"
+                                      className="text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 p-2 rounded border-l-2 border-yellow-500"
                                     >
                                       • {warning}
                                     </li>
@@ -476,18 +505,25 @@ export function RuleTestSidebar() {
                                       {collection.items.map((item, itemIdx) => (
                                         <div
                                           key={`item-${item.id}`}
-                                          className="p-2 border rounded text-sm"
+                                          className="p-2 border border-border bg-background/60 rounded text-sm"
                                         >
                                           <div className="font-medium">
                                             {item.name}
                                           </div>
                                           {item.details && (
-                                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                            <div className="text-xs text-muted-foreground mt-2 space-y-1 bg-muted/30 p-2 rounded">
                                               {Object.entries(item.details).map(
                                                 ([key, value]) => (
-                                                  <div key={key}>
-                                                    <strong>{key}:</strong>{' '}
-                                                    {String(value)}
+                                                  <div
+                                                    key={key}
+                                                    className="flex gap-2"
+                                                  >
+                                                    <strong className="text-foreground/80 min-w-fit">
+                                                      {key}:
+                                                    </strong>
+                                                    <span className="font-mono">
+                                                      {String(value)}
+                                                    </span>
                                                   </div>
                                                 ),
                                               )}
@@ -514,7 +550,7 @@ export function RuleTestSidebar() {
                                 (condition, idx) => (
                                   <div
                                     key={`condition-${condition.description}`}
-                                    className="p-3 border rounded space-y-2"
+                                    className="p-3 border border-border bg-background/60 rounded space-y-2"
                                   >
                                     <div className="flex items-center justify-between">
                                       <span className="text-sm font-medium">
@@ -531,9 +567,13 @@ export function RuleTestSidebar() {
                                       </Badge>
                                     </div>
                                     {condition.value && (
-                                      <div className="text-xs text-muted-foreground">
-                                        <strong>Result:</strong>{' '}
-                                        {String(condition.value)}
+                                      <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
+                                        <strong className="text-foreground/80">
+                                          Result:
+                                        </strong>{' '}
+                                        <span className="font-mono">
+                                          {String(condition.value)}
+                                        </span>
                                       </div>
                                     )}
                                   </div>
@@ -556,7 +596,7 @@ export function RuleTestSidebar() {
                               {simulationResult.payments.map((payment, idx) => (
                                 <div
                                   key={`payment-${payment.from}-${payment.to.join('-')}-${payment.currency}`}
-                                  className="p-3 border rounded-lg space-y-2"
+                                  className="p-3 border border-border bg-background/60 rounded-lg space-y-2"
                                 >
                                   <div className="flex items-center justify-between">
                                     <Badge variant="outline">
@@ -566,9 +606,30 @@ export function RuleTestSidebar() {
                                       {payment.amount} {payment.currency}
                                     </span>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    <div>From: {payment.from}</div>
-                                    <div>To: {payment.to.join(', ')}</div>
+                                  <div className="text-sm text-muted-foreground space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <strong className="text-foreground/80 text-xs">
+                                        From:
+                                      </strong>
+                                      <span className="font-mono bg-secondary/50 px-2 py-1 rounded text-xs">
+                                        {payment.from}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                      <strong className="text-foreground/80 text-xs mt-1">
+                                        To:
+                                      </strong>
+                                      <div className="flex flex-wrap gap-1">
+                                        {payment.to.map((recipient, idx) => (
+                                          <span
+                                            key={`recipient-${recipient}`}
+                                            className="font-mono bg-secondary/50 px-2 py-1 rounded text-xs"
+                                          >
+                                            {recipient}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
