@@ -15,6 +15,8 @@ import { memo } from 'react';
 import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
 import type { ChatMessage } from '@/lib/types';
+import { useRuleTest } from '@/contexts/rule-test-context';
+import { PlayIcon } from 'lucide-react';
 
 export function PureMessageActions({
   chatId,
@@ -29,6 +31,21 @@ export function PureMessageActions({
 }) {
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
+
+  // Safely get rule test context
+  let hasRule = false;
+  let isRuleLoaded = false;
+  let setIsTestSidebarOpen: ((open: boolean) => void) | null = null;
+
+  try {
+    const ruleTestContext = useRuleTest();
+    hasRule = ruleTestContext.hasRule;
+    isRuleLoaded = ruleTestContext.isRuleLoaded;
+    setIsTestSidebarOpen = ruleTestContext.setIsTestSidebarOpen;
+  } catch (error) {
+    // Context not available, rule test features disabled
+    console.warn('RuleTest context not available:', error);
+  }
 
   if (isLoading) return null;
   if (message.role === 'user') return null;
@@ -168,6 +185,22 @@ export function PureMessageActions({
           </TooltipTrigger>
           <TooltipContent>Downvote Response</TooltipContent>
         </Tooltip>
+
+        {isRuleLoaded && hasRule && setIsTestSidebarOpen && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="py-1 px-2 h-fit text-muted-foreground !pointer-events-auto"
+                variant="outline"
+                onClick={() => setIsTestSidebarOpen(true)}
+              >
+                <PlayIcon size={16} />
+                &nbsp;Test Rule
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Test Rule</TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </TooltipProvider>
   );

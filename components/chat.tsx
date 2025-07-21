@@ -22,6 +22,8 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { RuleTestProvider } from '@/contexts/rule-test-context';
+import { RuleTestSidebar } from './rule-test-sidebar';
 
 export function Chat({
   id,
@@ -127,7 +129,7 @@ export function Chat({
   });
 
   return (
-    <>
+    <RuleTestProvider chatId={id}>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
         <ChatHeader
           chatId={id}
@@ -183,6 +185,8 @@ export function Chat({
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
       />
-    </>
+
+      <RuleTestSidebar />
+    </RuleTestProvider>
   );
 }

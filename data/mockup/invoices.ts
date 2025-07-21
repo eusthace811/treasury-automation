@@ -14,7 +14,7 @@ export interface Invoice {
   recurring: boolean;
   recurringFrequency: string | null;
   tags: string[];
-  status: 'paid' | 'approved' | 'cancelled';
+  status: 'pending' | 'paid' | 'approved' | 'cancelled';
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
@@ -26,7 +26,7 @@ export interface InvoicesData {
 
 export const invoicesData: InvoicesData = {
   invoices: [
-    // Contractor invoices (majority)
+    // Contractor invoices
     {
       id: 'bf1a8a3e-0459-4956-a238-19de2d7e8e64',
       vendorName: 'Alex Rodriguez',
@@ -91,7 +91,7 @@ export const invoicesData: InvoicesData = {
       deletedAt: null,
     },
     {
-      id: 'contractor-004-aug-2024',
+      id: 'be0a296c-0111-4691-adef-3be23ea96141',
       vendorName: 'Alex Rodriguez',
       vendorAddress: '0x5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F',
       amount: 1700.0,
@@ -112,7 +112,7 @@ export const invoicesData: InvoicesData = {
       deletedAt: null,
     },
     {
-      id: 'contractor-005-aug-2024',
+      id: 'be0a296c-0112-4691-adef-3be23ea96141',
       vendorName: 'Jordan Thompson',
       vendorAddress: '0x6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F5A',
       amount: 1125.0,
@@ -127,51 +127,7 @@ export const invoicesData: InvoicesData = {
       recurring: false,
       recurringFrequency: null,
       tags: ['design', 'ui', 'contractor'],
-      status: 'approved',
-      createdAt: 1721260800,
-      updatedAt: 1752796800,
-      deletedAt: null,
-    },
-    // One service invoice (approved)
-    {
-      id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-      vendorName: 'AWS',
-      vendorAddress: '0x0000000000000000000000000000000000000000',
-      amount: 8450.0,
-      currency: 'USDC',
-      description: 'Cloud infrastructure - July 2024',
-      category: 'infrastructure',
-      dueDate: 1721692800,
-      invoiceDate: 1721088000,
-      approvedBy: 'sarah.chen@techflow.com',
-      approvedAt: 1721174400,
-      priority: 'normal',
-      recurring: true,
-      recurringFrequency: 'monthly',
-      tags: ['cloud', 'infrastructure', 'recurring'],
-      status: 'approved',
-      createdAt: 1721260800,
-      updatedAt: 1752796800,
-      deletedAt: null,
-    },
-    // One service invoice (not approved)
-    {
-      id: '6ba7b812-9dad-11d1-80b4-00c04fd430c8',
-      vendorName: 'Salesforce',
-      vendorAddress: '0x0000000000000000000000000000000000000000',
-      amount: 4200.0,
-      currency: 'USDC',
-      description: 'CRM Enterprise licenses - Q3 2024',
-      category: 'software',
-      dueDate: 1721692800,
-      invoiceDate: 1721088000,
-      approvedBy: null,
-      approvedAt: null,
-      priority: 'normal',
-      recurring: true,
-      recurringFrequency: 'quarterly',
-      tags: ['software', 'crm', 'licenses'],
-      status: 'cancelled',
+      status: 'pending',
       createdAt: 1721260800,
       updatedAt: 1752796800,
       deletedAt: null,
