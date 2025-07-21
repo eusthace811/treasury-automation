@@ -76,6 +76,7 @@ export const conditionSchema = z.object({
   field: z.string(),
   operator: z.string(),
   value: z.union([z.string(), z.number(), z.boolean()]),
+  when: z.enum(['before', 'after']).optional().default('before'),
   logic: z.enum(['AND', 'OR']).optional(),
   description: z.string().optional(),
 });

@@ -203,6 +203,8 @@ name, snapshot.currentMonth.revenue, snapshot.currentMonth.expenses, snapshot.cu
 
 ### DATA LISTINGS:
 
+- COLLECTIONS: accounts, employees, contractors, invoices, treasury
+
 - ACCOUNTS:
 ${extraContext.accounts
   .map(
@@ -215,7 +217,7 @@ ${extraContext.accounts
 ${extraContext.employees
   .map(
     (emp) =>
-      `- name: "${emp.name}" | role: "${emp.role}" | department: "${emp.department}" | salary: ${emp.salary} | currency: "${emp.currency}" | payFrequency: "${emp.payFrequency}" | isActive: ${emp.isActive} | isFounder: ${emp.isFounder} | email: "${emp.email}" | payrollAddress: "${emp.payrollAddress}"`,
+      `- name: "${emp.name}" | role: "${emp.role}" | department: "${emp.department}" | salary: ${emp.salary} | currency: "${emp.currency}" | payFrequency: "${emp.payFrequency}" | status: ${emp.status} | email: "${emp.email}" | walletAddress: "${emp.walletAddress}" | tags: ${emp.tags.map((tag) => `"${tag}"`).join(', ')}`,
   )
   .join('\n')}
 
@@ -223,7 +225,7 @@ ${extraContext.employees
 ${extraContext.contractors
   .map(
     (contractor) =>
-      `- name: "${contractor.name}" | specialty: "${contractor.specialty}" | hourlyRate: ${contractor.hourlyRate} | currency: "${contractor.currency}" | maxHoursPerWeek: ${contractor.maxHoursPerWeek} | isActive: ${contractor.isActive} | email: "${contractor.email}" | paymentAddress: "${contractor.paymentAddress}" | contractStart: ${contractor.contractStart} | contractEnd: ${contractor.contractEnd}`,
+      `- name: "${contractor.name}" | specialty: "${contractor.role}" | hourlyRate: ${contractor.hourlyRate} | currency: "${contractor.currency}" | maxHoursPerWeek: ${contractor.maxHoursPerWeek} | status: ${contractor.status} | email: "${contractor.email}" | walletAddress: "${contractor.walletAddress}" | contractStart: ${contractor.contractStart} | contractEnd: ${contractor.contractEnd} | tags: ${contractor.tags.map((tag) => `"${tag}"`).join(', ')}`,
   )
   .join('\n')}
 
@@ -231,7 +233,7 @@ ${extraContext.contractors
 ${extraContext.invoices
   .map(
     (invoice) =>
-      `- vendorName: "${invoice.vendorName}" | amount: ${invoice.amount} | currency: "${invoice.currency}" | description: "${invoice.description}" | status: "${invoice.status}" | approved: ${invoice.approved} | category: "${invoice.category}" | dueDate: ${invoice.dueDate} | invoiceDate: ${invoice.invoiceDate} | priority: "${invoice.priority}" | vendorAddress: "${invoice.vendorAddress}"`,
+      `- vendorName: "${invoice.vendorName}" | amount: ${invoice.amount} | currency: "${invoice.currency}" | description: "${invoice.description}" | status: "${invoice.status}" | category: "${invoice.category}" | dueDate: ${invoice.dueDate} | invoiceDate: ${invoice.invoiceDate} | priority: "${invoice.priority}" | vendorAddress: "${invoice.vendorAddress}"`,
   )
   .join('\n')}
 

@@ -8,14 +8,16 @@ export interface Invoice {
   category: string;
   dueDate: number;
   invoiceDate: number;
-  approved: boolean;
   approvedBy: string | null;
   approvedAt: number | null;
   priority: string;
   recurring: boolean;
   recurringFrequency: string | null;
   tags: string[];
-  status: 'paid' | 'unpaid' | 'overdue' | 'cancelled';
+  status: 'paid' | 'approved' | 'cancelled';
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
 }
 
 export interface InvoicesData {
@@ -35,14 +37,16 @@ export const invoicesData: InvoicesData = {
       category: 'development',
       dueDate: 1721692800,
       invoiceDate: 1721088000,
-      approved: true,
       approvedBy: 'mike.torres@techflow.com',
       approvedAt: 1721174400,
       priority: 'normal',
       recurring: false,
       recurringFrequency: null,
       tags: ['frontend', 'development', 'contractor'],
-      status: 'unpaid',
+      status: 'approved',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
     {
       id: '171a5929-dc4f-476f-8166-2d52e8f0d92a',
@@ -54,14 +58,16 @@ export const invoicesData: InvoicesData = {
       category: 'design',
       dueDate: 1721692800,
       invoiceDate: 1721088000,
-      approved: true,
       approvedBy: 'lisa.park@techflow.com',
       approvedAt: 1721174400,
       priority: 'normal',
       recurring: false,
       recurringFrequency: null,
       tags: ['design', 'ui', 'ux', 'contractor'],
-      status: 'unpaid',
+      status: 'approved',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
     {
       id: 'be0a296c-09a1-4691-adef-3be23ea96141',
@@ -73,14 +79,16 @@ export const invoicesData: InvoicesData = {
       category: 'content',
       dueDate: 1721952000,
       invoiceDate: 1721347200,
-      approved: false,
       approvedBy: null,
       approvedAt: null,
       priority: 'low',
       recurring: false,
       recurringFrequency: null,
       tags: ['content', 'writing', 'contractor'],
-      status: 'unpaid',
+      status: 'approved',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
     {
       id: 'contractor-004-aug-2024',
@@ -92,14 +100,16 @@ export const invoicesData: InvoicesData = {
       category: 'development',
       dueDate: 1722556800,
       invoiceDate: 1722211200,
-      approved: true,
       approvedBy: 'mike.torres@techflow.com',
       approvedAt: 1722297600,
       priority: 'normal',
       recurring: false,
       recurringFrequency: null,
       tags: ['frontend', 'development', 'contractor'],
-      status: 'unpaid',
+      status: 'approved',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
     {
       id: 'contractor-005-aug-2024',
@@ -111,14 +121,16 @@ export const invoicesData: InvoicesData = {
       category: 'design',
       dueDate: 1722556800,
       invoiceDate: 1722211200,
-      approved: true,
       approvedBy: 'lisa.park@techflow.com',
       approvedAt: 1722297600,
       priority: 'normal',
       recurring: false,
       recurringFrequency: null,
       tags: ['design', 'ui', 'contractor'],
-      status: 'unpaid',
+      status: 'approved',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
     // One service invoice (approved)
     {
@@ -131,14 +143,16 @@ export const invoicesData: InvoicesData = {
       category: 'infrastructure',
       dueDate: 1721692800,
       invoiceDate: 1721088000,
-      approved: true,
       approvedBy: 'sarah.chen@techflow.com',
       approvedAt: 1721174400,
       priority: 'normal',
       recurring: true,
       recurringFrequency: 'monthly',
       tags: ['cloud', 'infrastructure', 'recurring'],
-      status: 'unpaid',
+      status: 'approved',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
     // One service invoice (not approved)
     {
@@ -151,14 +165,16 @@ export const invoicesData: InvoicesData = {
       category: 'software',
       dueDate: 1721692800,
       invoiceDate: 1721088000,
-      approved: false,
       approvedBy: null,
       approvedAt: null,
       priority: 'normal',
       recurring: true,
       recurringFrequency: 'quarterly',
       tags: ['software', 'crm', 'licenses'],
-      status: 'overdue',
+      status: 'cancelled',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
     },
   ],
 };

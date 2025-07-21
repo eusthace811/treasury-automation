@@ -92,7 +92,7 @@ export const accountsData: AccountsData = {
     },
     {
       id: '9857bd48-026d-4bcc-99dd-0766fe884a7e',
-      name: 'Growth Investment Fund',
+      name: 'Growth Fund',
       type: 'EOA',
       address: '0x7A0B3D6E9F2C5A8B1D4E7F0A3B6C9D2E5F8A1B4C',
       chainId: 1,
