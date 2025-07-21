@@ -5,15 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { chat } from '@/lib/db/schema';
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
-import { Client } from '@upstash/qstash';
-
-const qstashClient = new Client({
-  token:
-    process.env.QSTASH_TOKEN ??
-    (() => {
-      throw new Error('QSTASH_TOKEN environment variable is required');
-    })(),
-});
+import { qstashClient, qstashQueue, QUEUE_NAME } from '@/lib/qstash/client';
 
 // Use shared database connection
 const client = postgres(
@@ -107,6 +99,7 @@ export const ruleUpdater = (chatId: string) =>
               },
               body: JSON.stringify({ chatId, ruleData: treasuryRuleData }),
               cron: treasuryRuleData.execution.cron,
+              queueName: QUEUE_NAME,
             });
             newScheduleId = scheduleResult.scheduleId;
             console.log('✅ Created QStash schedule ID:', newScheduleId);
@@ -124,7 +117,7 @@ export const ruleUpdater = (chatId: string) =>
             treasuryRuleData.execution.at,
           );
           try {
-            const messageResult = await qstashClient.publishJSON({
+            const messageResult = await qstashQueue.enqueueJSON({
               url: 'https://e755d9234b2f.ngrok-free.app/api/queue', // using ngrok webhook for now
               headers: {
                 'Content-Type': 'application/json',

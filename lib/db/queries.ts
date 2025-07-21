@@ -35,7 +35,7 @@ import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
-import { Client } from '@upstash/qstash';
+import { qstashClient } from '@/lib/qstash/client';
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
 
 // Optionally, if not using email/pass login, you can
@@ -45,15 +45,6 @@ import type { TreasuryRuleData } from '@/lib/treasury/schema';
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
-
-// QStash client for schedule management
-const qstashClient = new Client({
-  token:
-    process.env.QSTASH_TOKEN ??
-    (() => {
-      throw new Error('QSTASH_TOKEN environment variable is required');
-    })(),
-});
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
@@ -131,13 +122,19 @@ export async function deleteChatById({ id }: { id: string }) {
       try {
         const ruleData = currentChat.ruleData as TreasuryRuleData;
         const executionTiming = ruleData.execution?.timing;
-        
+
         if (executionTiming === 'schedule') {
           await qstashClient.schedules.delete(currentChat.scheduleId);
-          console.log('Cancelled QStash schedule during chat deletion:', currentChat.scheduleId);
+          console.log(
+            'Cancelled QStash schedule during chat deletion:',
+            currentChat.scheduleId,
+          );
         } else if (executionTiming === 'once') {
           await qstashClient.messages.delete(currentChat.scheduleId);
-          console.log('Cancelled QStash delayed message during chat deletion:', currentChat.scheduleId);
+          console.log(
+            'Cancelled QStash delayed message during chat deletion:',
+            currentChat.scheduleId,
+          );
         }
       } catch (error) {
         console.warn(
@@ -152,7 +149,7 @@ export async function deleteChatById({ id }: { id: string }) {
     // Soft delete: set deletedAt timestamp and deactivate any treasury rule
     const [chatsDeleted] = await db
       .update(chat)
-      .set({ 
+      .set({
         deletedAt: new Date(),
         isActive: false, // Deactivate any treasury rule
         scheduleId: null, // Clear the schedule ID
@@ -256,27 +253,36 @@ export async function getChatById({ id }: { id: string }) {
   }
 }
 
-export async function updateChatTitle({ id, title }: { id: string; title: string }) {
+export async function updateChatTitle({
+  id,
+  title,
+}: { id: string; title: string }) {
   try {
     const [updatedChat] = await db
       .update(chat)
-      .set({ 
+      .set({
         title: title.trim(),
         updatedAt: new Date(),
       })
       .where(and(eq(chat.id, id), isNull(chat.deletedAt)))
       .returning();
-    
+
     if (!updatedChat) {
-      throw new ChatSDKError('not_found:chat', 'Chat not found or has been deleted');
+      throw new ChatSDKError(
+        'not_found:chat',
+        'Chat not found or has been deleted',
+      );
     }
-    
+
     return updatedChat;
   } catch (error) {
     if (error instanceof ChatSDKError) {
       throw error;
     }
-    throw new ChatSDKError('bad_request:database', 'Failed to update chat title');
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update chat title',
+    );
   }
 }
 
@@ -612,7 +618,6 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
   }
 }
 
-
 // New function for unified Chat-as-Rule-Storage architecture
 export async function getActiveRulesByUserId({ userId }: { userId: string }) {
   try {
@@ -633,8 +638,8 @@ export async function getActiveRulesByUserId({ userId }: { userId: string }) {
           eq(chat.userId, userId),
           isNull(chat.deletedAt), // Not soft deleted
           eq(chat.isActive, true), // Rule is active
-          isNotNull(chat.ruleData) // Has rule data
-        )
+          isNotNull(chat.ruleData), // Has rule data
+        ),
       )
       .orderBy(desc(chat.createdAt));
   } catch (error) {
