@@ -655,8 +655,13 @@ export function RuleTestSidebar() {
                                       <Badge
                                         variant={
                                           condition.passed
-                                            ? 'default'
+                                            ? 'secondary'
                                             : 'destructive'
+                                        }
+                                        className={
+                                          condition.passed
+                                            ? 'text-green-500'
+                                            : 'text-white'
                                         }
                                       >
                                         {condition.passed ? 'PASS' : 'FAIL'}
