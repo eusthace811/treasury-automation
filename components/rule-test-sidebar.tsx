@@ -2,7 +2,19 @@
 
 import { useRuleTest } from '@/contexts/rule-test-context';
 import { Button } from '@/components/ui/button';
-import { XIcon, PlayIcon, LoaderIcon, RotateCcwIcon } from 'lucide-react';
+import {
+  XIcon,
+  PlayIcon,
+  LoaderIcon,
+  RotateCcwIcon,
+  ClockIcon,
+  CalendarIcon,
+  ZapIcon,
+  CreditCardIcon,
+  UsersIcon,
+  CheckCircleIcon,
+  FileTextIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -125,26 +137,64 @@ export function RuleTestSidebar() {
                 <div className="w-1/2 p-6 space-y-6 overflow-y-auto border-r border-border bg-background/50">
                   {/* Rule Overview */}
                   {ruleData && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Rule Overview</CardTitle>
-                        <CardDescription>{ruleData.original}</CardDescription>
+                    <Card className="bg-gradient-to-br from-card to-muted/20 border-border/50">
+                      <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border/30">
+                        <CardTitle className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-primary rounded-full" />
+                          Rule Overview
+                        </CardTitle>
+                        <CardDescription className="bg-muted/30 p-2 rounded border-l-2 border-purple">
+                          {ruleData.original}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {/* Execution Details */}
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold">
+                          <div className="flex items-center gap-2 mt-4">
+                            <span className="text-sm font-semibold flex items-center gap-2">
+                              {ruleData.execution.timing === 'once' && (
+                                <ClockIcon
+                                  size={16}
+                                  className="text-blue-500"
+                                />
+                              )}
+                              {ruleData.execution.timing === 'schedule' && (
+                                <CalendarIcon
+                                  size={16}
+                                  className="text-green-500"
+                                />
+                              )}
+                              {ruleData.execution.timing === 'hook' && (
+                                <ZapIcon
+                                  size={16}
+                                  className="text-purple-500"
+                                />
+                              )}
                               Execution Type:
                             </span>
-                            <Badge variant="outline">
+                            <Badge
+                              variant={
+                                ruleData.execution.timing === 'once'
+                                  ? 'default'
+                                  : ruleData.execution.timing === 'schedule'
+                                    ? 'secondary'
+                                    : 'destructive'
+                              }
+                              className={`${
+                                ruleData.execution.timing === 'once'
+                                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                  : ruleData.execution.timing === 'schedule'
+                                    ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                    : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                              }`}
+                            >
                               {ruleData.execution.timing}
                             </Badge>
                           </div>
 
                           {ruleData.execution.timing === 'once' &&
                             ruleData.execution.at && (
-                              <div className="text-sm text-muted-foreground ml-2">
+                              <div className="text-sm text-green-500 ml-2">
                                 <strong>When:</strong>{' '}
                                 {formatTimestamp(ruleData.execution.at)}
                               </div>
@@ -154,8 +204,12 @@ export function RuleTestSidebar() {
                             ruleData.execution.cron && (
                               <div className="text-sm text-muted-foreground ml-2">
                                 <div>
-                                  <strong>Schedule:</strong>{' '}
-                                  {cronToHuman(ruleData.execution.cron)}
+                                  <span className="text-green-500 font-bold">
+                                    Schedule:
+                                  </span>{' '}
+                                  <span className="text-green-500">
+                                    {cronToHuman(ruleData.execution.cron)}
+                                  </span>
                                 </div>
                                 <div className="font-mono text-xs mt-1">
                                   Cron: {ruleData.execution.cron}
@@ -184,10 +238,25 @@ export function RuleTestSidebar() {
                         {/* Payment Details */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold">
+                            <span className="text-sm font-semibold flex items-center gap-2">
+                              <CreditCardIcon
+                                size={16}
+                                className="text-emerald-500"
+                              />
                               Payment Type:
                             </span>
-                            <Badge variant="outline">
+                            <Badge
+                              variant={
+                                ruleData.payment.action === 'simple'
+                                  ? 'default'
+                                  : 'secondary'
+                              }
+                              className={`${
+                                ruleData.payment.action === 'simple'
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                              }`}
+                            >
                               {ruleData.payment.action}
                             </Badge>
                           </div>
@@ -197,7 +266,7 @@ export function RuleTestSidebar() {
                               <strong className="text-foreground/80">
                                 Source:
                               </strong>{' '}
-                              <span className="uppercase font-mono bg-secondary/50 px-2 py-1 rounded text-xs">
+                              <span className="uppercase font-mono bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded text-xs border border-emerald-500/30">
                                 {ruleData.payment.source}
                               </span>
                             </div>
@@ -214,18 +283,27 @@ export function RuleTestSidebar() {
                             {ruleData.payment.action === 'split' &&
                               ruleData.payment.percentages && (
                                 <div className="mt-2">
-                                  <strong>Split Distribution:</strong>
-                                  <div className="ml-2 space-y-2 mt-2 bg-muted/20 p-2 rounded">
+                                  <strong className="flex items-center gap-2">
+                                    <UsersIcon
+                                      size={14}
+                                      className="text-violet-500"
+                                    />
+                                    Split Distribution:
+                                  </strong>
+                                  <div className="ml-2 space-y-2 mt-2 bg-violet-500/10 p-2 rounded border border-violet-500/20">
                                     {ruleData.payment.beneficiary.map(
                                       (beneficiary, idx) => (
                                         <div
                                           key={`beneficiary-${beneficiary}`}
-                                          className="flex justify-between items-center p-2 bg-background/60 rounded border border-border"
+                                          className="flex justify-between items-center p-2 bg-background/60 rounded border border-violet-500/30"
                                         >
                                           <span className="truncate uppercase font-mono text-xs">
                                             {beneficiary}
                                           </span>
-                                          <Badge variant="secondary">
+                                          <Badge
+                                            variant="secondary"
+                                            className="bg-violet-500/20 text-violet-300 border-violet-500/30"
+                                          >
                                             {ruleData.payment.percentages?.[
                                               idx
                                             ] ?? 0}
@@ -240,18 +318,22 @@ export function RuleTestSidebar() {
 
                             {ruleData.payment.action === 'simple' && (
                               <div className="space-y-2">
-                                <strong className="text-foreground/80">
+                                <strong className="text-foreground/80 flex items-center gap-2">
+                                  <UsersIcon
+                                    size={14}
+                                    className="text-indigo-500"
+                                  />
                                   Beneficiary:
                                 </strong>
-                                <div className="ml-2 space-y-1 bg-muted/20 p-2 rounded">
+                                <div className="ml-2 space-y-1 bg-indigo-500/10 p-2 rounded border border-indigo-500/20">
                                   {ruleData.payment.beneficiary.map(
                                     (beneficiary, idx) => (
                                       <div
                                         key={`beneficiary-${beneficiary}`}
                                         className="flex items-center gap-2"
                                       >
-                                        <span className="w-2 h-2 bg-primary/60 rounded-full" />
-                                        <span className="uppercase font-mono text-xs bg-secondary/50 px-2 py-1 rounded">
+                                        <span className="w-2 h-2 bg-indigo-500 rounded-full" />
+                                        <span className="uppercase font-mono text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded border border-indigo-500/30">
                                           {beneficiary}
                                         </span>
                                       </div>
@@ -269,10 +351,17 @@ export function RuleTestSidebar() {
                             <Separator />
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold">
+                                <span className="text-sm font-semibold flex items-center gap-2">
+                                  <CheckCircleIcon
+                                    size={16}
+                                    className="text-cyan-500"
+                                  />
                                   Conditions:
                                 </span>
-                                <Badge variant="outline">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+                                >
                                   {ruleData.conditions.length} condition(s)
                                 </Badge>
                               </div>
@@ -343,10 +432,14 @@ export function RuleTestSidebar() {
                           <>
                             <Separator />
                             <div className="space-y-2">
-                              <span className="text-sm font-semibold">
+                              <span className="text-sm font-semibold flex items-center gap-2">
+                                <FileTextIcon
+                                  size={16}
+                                  className="text-amber-500"
+                                />
                                 Memo:
                               </span>
-                              <div className="text-sm text-muted-foreground ml-2 italic bg-muted/30 p-3 rounded border-l-2 border-primary/30">
+                              <div className="text-sm text-muted-foreground ml-2 italic bg-amber-500/10 p-3 rounded border-l-2 border-amber-500/50">
                                 &ldquo;{ruleData.memo}&rdquo;
                               </div>
                             </div>
