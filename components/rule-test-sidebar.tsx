@@ -13,11 +13,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  parseCronToHuman,
-  formatAmount,
-  formatTimestamp,
-} from '@/lib/cron-parser';
+import { formatAmount, formatTimestamp } from '@/lib/utils/formatter';
+import { cronToHuman } from '@/lib/utils/cron';
 import { Separator } from '@/components/ui/separator';
 
 interface SimulationResult {
@@ -158,7 +155,7 @@ export function RuleTestSidebar() {
                               <div className="text-sm text-muted-foreground ml-2">
                                 <div>
                                   <strong>Schedule:</strong>{' '}
-                                  {parseCronToHuman(ruleData.execution.cron)}
+                                  {cronToHuman(ruleData.execution.cron)}
                                 </div>
                                 <div className="font-mono text-xs mt-1">
                                   Cron: {ruleData.execution.cron}

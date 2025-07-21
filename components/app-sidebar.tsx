@@ -79,7 +79,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     setOpenMobile(false);
                   }}
                 >
-                  <List className="h-4 w-4" />
+                  <List className="size-4" />
                   <span>QUEUE</span>
                 </Link>
               </SidebarMenuButton>

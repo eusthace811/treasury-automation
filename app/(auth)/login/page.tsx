@@ -28,6 +28,7 @@ export default function Page() {
 
   const { update: updateSession } = useSession();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (state.status === 'failed') {
       toast({

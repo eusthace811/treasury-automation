@@ -1,5 +1,5 @@
 import { auth } from '@/app/(auth)/auth';
-import { simulateRule } from '@/lib/rule-simulation';
+import { simulateRule } from '@/lib/utils/rule-simulation';
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
 import type { NextRequest } from 'next/server';
 

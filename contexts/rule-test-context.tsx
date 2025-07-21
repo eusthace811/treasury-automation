@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import useSWR from 'swr';
 import type { Chat } from '@/lib/db/schema';
 import type { TreasuryRuleData } from '@/lib/treasury/schema';
@@ -32,21 +32,23 @@ interface RuleTestProviderProps {
 
 export function RuleTestProvider({ children, chatId }: RuleTestProviderProps) {
   const [isTestSidebarOpen, setIsTestSidebarOpen] = useState(false);
-  
-  // Fetch chat data including rule data
-  const { data: chatData, isLoading, error } = useSWR<Chat>(
-    chatId ? `/api/chat/${chatId}/data` : null,
-    fetcher,
-    {
-      refreshInterval: 5000, // Refresh every 5 seconds to catch new rules
-      revalidateOnFocus: true,
-      onError: (err) => {
-        console.error('Failed to fetch chat data:', err);
-      },
-    }
-  );
 
-  const ruleData = chatData?.ruleData ? (chatData.ruleData as TreasuryRuleData) : null;
+  // Fetch chat data including rule data
+  const {
+    data: chatData,
+    isLoading,
+    error,
+  } = useSWR<Chat>(chatId ? `/api/chat/${chatId}/data` : null, fetcher, {
+    refreshInterval: 5000, // Refresh every 5 seconds to catch new rules
+    revalidateOnFocus: true,
+    onError: (err) => {
+      console.error('Failed to fetch chat data:', err);
+    },
+  });
+
+  const ruleData = chatData?.ruleData
+    ? (chatData.ruleData as TreasuryRuleData)
+    : null;
   const isRuleLoaded = !isLoading && !error;
   const hasRule = Boolean(ruleData && isRuleLoaded);
 
@@ -56,7 +58,7 @@ export function RuleTestProvider({ children, chatId }: RuleTestProviderProps) {
     ruleData,
     isRuleLoaded,
     hasRule,
-    chatData,
+    chatData: chatData || null,
   };
 
   return (

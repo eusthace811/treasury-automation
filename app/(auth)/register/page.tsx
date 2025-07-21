@@ -27,6 +27,7 @@ export default function Page() {
 
   const { update: updateSession } = useSession();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (state.status === 'user_exists') {
       toast({ type: 'error', description: 'Account already exists!' });
