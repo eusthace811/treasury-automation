@@ -208,7 +208,7 @@ export async function POST(request: Request) {
             ruleParser,
             ruleValidator,
             ruleEvaluator,
-            ruleUpdater: ruleUpdater(id),
+            ruleUpdater,
             ruleAnswer,
             // getWeather,
             // createDocument: createDocument({ session, dataStream }),

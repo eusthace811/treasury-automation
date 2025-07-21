@@ -80,7 +80,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   }}
                 >
                   <List className="h-4 w-4" />
-                  <span>Queue</span>
+                  <span>QUEUE</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
