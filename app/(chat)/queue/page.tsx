@@ -1,72 +1,74 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { redirect } from 'next/navigation';
+// import { redirect } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScheduleTab } from '@/components/queue/schedule-tab';
 import { QueueTab } from '@/components/queue/queue-tab';
-import type { Schedule, Message } from '@upstash/qstash';
+import type { Schedule } from '@upstash/qstash';
 
 export default function QueuePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(true);
-  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSchedules = async () => {
     try {
       setSchedulesLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/qstash/schedules');
       if (!response.ok) {
         throw new Error(`Failed to fetch schedules: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       setSchedules(data.schedules || []);
     } catch (err) {
       console.error('Error fetching schedules:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch schedules');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch schedules',
+      );
       setSchedules([]);
     } finally {
       setSchedulesLoading(false);
     }
   };
 
-  const fetchMessages = async () => {
+  const fetchLogs = async () => {
     try {
-      setMessagesLoading(true);
+      setLogsLoading(true);
       setError(null);
-      
-      const response = await fetch('/api/qstash/messages');
+
+      const response = await fetch('/api/qstash/logs');
       if (!response.ok) {
-        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+        throw new Error(`Failed to fetch logs: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      setMessages(data.messages || []);
+      setLogs(data.logs || []);
     } catch (err) {
-      console.error('Error fetching messages:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch messages');
-      setMessages([]);
+      console.error('Error fetching logs:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch logs');
+      setLogs([]);
     } finally {
-      setMessagesLoading(false);
+      setLogsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchSchedules();
-    fetchMessages();
+    fetchLogs();
   }, []);
 
   const handleRefreshSchedules = () => {
     fetchSchedules();
   };
 
-  const handleRefreshMessages = () => {
-    fetchMessages();
+  const handleRefreshLogs = () => {
+    fetchLogs();
   };
 
   if (error) {
@@ -78,14 +80,17 @@ export default function QueuePage() {
             View and manage your treasury automation queue
           </p>
         </div>
-        
+
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h3 className="text-red-800 font-medium mb-2">Error Loading Queue Data</h3>
+          <h3 className="text-red-800 font-medium mb-2">
+            Error Loading Queue Data
+          </h3>
           <p className="text-red-600 text-sm mb-4">{error}</p>
-          <button 
+          <button
+            type="button"
             onClick={() => {
               fetchSchedules();
-              fetchMessages();
+              fetchLogs();
             }}
             className="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
           >
@@ -110,24 +115,22 @@ export default function QueuePage() {
           <TabsTrigger value="schedules">
             Schedules ({schedules.length})
           </TabsTrigger>
-          <TabsTrigger value="queue">
-            Queue ({messages.length})
-          </TabsTrigger>
+          <TabsTrigger value="queue">Logs ({logs.length})</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="schedules" className="mt-6">
-          <ScheduleTab 
+          <ScheduleTab
             schedules={schedules}
             loading={schedulesLoading}
             onRefresh={handleRefreshSchedules}
           />
         </TabsContent>
-        
+
         <TabsContent value="queue" className="mt-6">
-          <QueueTab 
-            messages={messages}
-            loading={messagesLoading}
-            onRefresh={handleRefreshMessages}
+          <QueueTab
+            logs={logs}
+            loading={logsLoading}
+            onRefresh={handleRefreshLogs}
           />
         </TabsContent>
       </Tabs>

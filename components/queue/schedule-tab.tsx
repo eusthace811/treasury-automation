@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cronToHuman } from '@/lib/utils/cron';
@@ -17,20 +23,25 @@ interface ScheduleTabProps {
 
 type ScheduleStatus = 'all' | 'active' | 'paused';
 
-export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps) {
+export function ScheduleTab({
+  schedules,
+  loading,
+  onRefresh,
+}: ScheduleTabProps) {
   const [statusFilter, setStatusFilter] = useState<ScheduleStatus>('all');
-  const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>(schedules);
+  const [filteredSchedules, setFilteredSchedules] =
+    useState<Schedule[]>(schedules);
 
   useEffect(() => {
     if (statusFilter === 'all') {
       setFilteredSchedules(schedules);
     } else {
       setFilteredSchedules(
-        schedules.filter(schedule => {
+        schedules.filter((schedule) => {
           // QStash schedules don't have a direct status field in the response
           // We'll assume active for now, but this could be enhanced based on actual API response
           return statusFilter === 'active';
-        })
+        }),
       );
     }
   }, [schedules, statusFilter]);
@@ -47,7 +58,12 @@ export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps)
           <Skeleton className="h-9 w-9" />
         </div>
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
+          <Card
+            key={`loading-skeleton-${
+              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+              i
+            }`}
+          >
             <CardHeader>
               <Skeleton className="h-6 w-48" />
               <Skeleton className="h-4 w-64" />
@@ -68,7 +84,10 @@ export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps)
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as ScheduleStatus)}>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as ScheduleStatus)}
+        >
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -78,9 +97,9 @@ export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps)
             <SelectItem value="paused">Paused</SelectItem>
           </SelectContent>
         </Select>
-        
-        <Button 
-          variant="outline" 
+
+        <Button
+          variant="outline"
           size="icon"
           onClick={onRefresh}
           disabled={loading}
@@ -95,10 +114,9 @@ export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps)
             <div className="text-muted-foreground text-center">
               <p className="text-lg font-medium">No schedules found</p>
               <p className="text-sm mt-2">
-                {statusFilter === 'all' 
+                {statusFilter === 'all'
                   ? 'No schedules have been created yet.'
-                  : `No ${statusFilter} schedules found.`
-                }
+                  : `No ${statusFilter} schedules found.`}
               </p>
             </div>
           </CardContent>
@@ -109,8 +127,10 @@ export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps)
             <Card key={schedule.scheduleId}>
               <CardHeader>
                 <CardTitle className="text-lg flex justify-between items-start">
-                  <span className="font-mono text-sm">{schedule.scheduleId}</span>
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                  <span className="font-mono text-sm">
+                    ID: {schedule.scheduleId}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
                     Active
                   </span>
                 </CardTitle>
@@ -118,40 +138,52 @@ export function ScheduleTab({ schedules, loading, onRefresh }: ScheduleTabProps)
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Destination</h4>
-                    <p className="text-sm font-mono break-all">{schedule.destination}</p>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                      Destination
+                    </h4>
+                    <p className="text-sm font-mono break-all">
+                      {schedule.destination}
+                    </p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Schedule</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                      Schedule
+                    </h4>
                     <p className="text-sm">{cronToHuman(schedule.cron)}</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-1">{schedule.cron}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-1">
+                      {schedule.cron}
+                    </p>
                   </div>
                 </div>
-                
+
                 {schedule.retries && (
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Retries</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                      Retries
+                    </h4>
                     <p className="text-sm">{schedule.retries} attempts</p>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Created</h4>
-                    <p className="text-sm">{formatTimestamp(schedule.createdAt)}</p>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                      Created
+                    </h4>
+                    <p className="text-sm">
+                      {formatTimestamp(schedule.createdAt)}
+                    </p>
                   </div>
-                  {schedule.nextDelivery && (
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Next Delivery</h4>
-                      <p className="text-sm">{formatTimestamp(schedule.nextDelivery)}</p>
-                    </div>
-                  )}
                 </div>
 
                 {schedule.callback && (
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Callback URL</h4>
-                    <p className="text-sm font-mono break-all text-muted-foreground">{schedule.callback}</p>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                      Callback URL
+                    </h4>
+                    <p className="text-sm font-mono break-all text-muted-foreground">
+                      {schedule.callback}
+                    </p>
                   </div>
                 )}
               </CardContent>

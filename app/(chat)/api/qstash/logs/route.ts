@@ -11,14 +11,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Note: QStash does not provide a messages.list() API method
-    // For now, return empty array. In the future, we could track messages in our database
-    const messages: any[] = [];
+    // Fetch all logs from QStash using pagination
+    const logs = [];
+    let cursor = null;
+
+    while (true) {
+      const res = await qstashClient.logs({ cursor: cursor ?? undefined });
+      logs.push(...res.logs);
+      cursor = res.cursor;
+      if (!cursor) {
+        break;
+      }
+    }
 
     return NextResponse.json({
-      messages: messages,
-      count: messages.length,
-      note: 'QStash does not provide a messages.list() API method. Messages would need to be tracked separately in the application database.',
+      logs: logs,
+      count: logs.length,
     });
   } catch (error) {
     console.error('Error fetching messages:', error);
