@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// CardTitle
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -11,7 +12,15 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, Clock, CheckCircle, XCircle, Circle } from 'lucide-react';
+import {
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Circle,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 // import type { Message } from '@upstash/qstash';
 
 interface QueueTabProps {
@@ -59,6 +68,7 @@ const statusColors = {
 export function QueueTab({ logs, loading, onRefresh }: QueueTabProps) {
   const [statusFilter, setStatusFilter] = useState<LogStatus>('all');
   const [filteredLogs, setFilteredLogs] = useState<any[]>(logs);
+  const [expandedBodies, setExpandedBodies] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (statusFilter === 'all') {
@@ -94,30 +104,47 @@ export function QueueTab({ logs, loading, onRefresh }: QueueTabProps) {
     );
   };
 
-  const truncateBody = (body: string, maxLength = 100) => {
-    // Try to decode if it looks like base64
+  const formatBody = (body: string): string => {
     const isBase64 =
       /^[A-Za-z0-9+/]*={0,2}$/.test(body) && body.length % 4 === 0;
 
-    let displayBody = body;
     if (isBase64 && body.length > 20) {
       try {
         const decoded = atob(body);
-        // Check if decoded content is valid JSON
         try {
           const parsed = JSON.parse(decoded);
-          displayBody = JSON.stringify(parsed, null, 2);
+          return JSON.stringify(parsed, null, 2);
         } catch {
-          displayBody = decoded;
+          return decoded;
         }
       } catch {
-        // If decoding fails, use original body
-        displayBody = body;
+        return body;
       }
     }
 
-    if (displayBody.length <= maxLength) return displayBody;
-    return `${displayBody.substring(0, maxLength)}...`;
+    return body;
+  };
+
+  const toggleBodyExpansion = (messageId: string) => {
+    setExpandedBodies((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  const getBodyPreview = (body: string, messageId: string) => {
+    const formattedBody = formatBody(body);
+    const isExpanded = expandedBodies.has(messageId);
+
+    if (isExpanded || formattedBody.length <= 150) {
+      return formattedBody;
+    }
+    return `${formattedBody.substring(0, 150)}...`;
   };
 
   if (loading) {
@@ -208,119 +235,164 @@ export function QueueTab({ logs, loading, onRefresh }: QueueTabProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredLogs.map((log, index) => (
-            <Card key={`${log.messageId || 'log'}-${index}`}>
-              <CardHeader>
-                <CardTitle className="text-lg flex justify-between items-start">
-                  <span className="font-mono text-sm">
-                    ID: {log.messageId || `Log ${index + 1}`}
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium ${getStatusColor(log.state || log.status)}`}
-                  >
-                    {getStatusIcon(log.state || log.status)}
-                    {log.state || log.status}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Destination
-                    </h4>
-                    <p className="text-sm font-mono break-all">
-                      {log.url || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Method
-                    </h4>
-                    <p className="text-sm font-mono">{log.method || 'POST'}</p>
-                  </div>
-                </div>
+        <div className="space-y-3">
+          {filteredLogs.map((log, index) => {
+            const messageId = log.messageId || `log-${index}`;
+            const isBodyExpanded = expandedBodies.has(messageId);
+            const formattedBody = log.body ? formatBody(log.body) : '';
+            const shouldShowToggle = formattedBody.length > 150;
 
-                {log.body && (
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Body Preview
-                    </h4>
-                    <div className="bg-muted rounded-md p-3">
-                      <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {truncateBody(log.body, 300)}
-                      </pre>
+            return (
+              <Card
+                key={`${messageId}-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  index
+                }`}
+                className="border-l-4 border-l-purple-500"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      ID: {messageId}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(log.state || log.status)}`}
+                      >
+                        {getStatusIcon(log.state || log.status)}
+                        {log.state || log.status}
+                      </span>
+                      {/* <span className="text-xs text-muted-foreground">
+                        {log.createdAt ? formatTimestamp(log.createdAt) : 'N/A'}
+                      </span> */}
                     </div>
                   </div>
-                )}
+                </CardHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Created
-                    </h4>
-                    <p className="text-sm">
-                      {log.createdAt ? formatTimestamp(log.createdAt) : 'N/A'}
-                    </p>
-                  </div> */}
-                  {log.scheduleId && (
+                <CardContent className="pt-0 space-y-4">
+                  {/* Main Info Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                        Schedule ID
-                      </h4>
-                      <p className="text-sm font-mono">{log.scheduleId}</p>
-                    </div>
-                  )}
-                </div>
-
-                {log.nextDelivery && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                        Next Delivery
-                      </h4>
-                      <p className="text-sm">
-                        {formatTimestamp(log.nextDelivery)}
+                      <span className="font-medium text-muted-foreground">
+                        Destination:
+                      </span>
+                      <p className="font-mono text-xs mt-1 break-all">
+                        {log.url || 'N/A'}
                       </p>
                     </div>
-                    {log.retried !== undefined && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">
+                        Method:
+                      </span>
+                      <p className="font-mono text-xs mt-1">
+                        {log.method || 'POST'}
+                      </p>
+                    </div>
+                    {log.scheduleId && (
                       <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                          Retry Count
-                        </h4>
-                        <p className="text-sm">{log.retried} attempts</p>
+                        <span className="font-medium text-muted-foreground">
+                          Schedule ID:
+                        </span>
+                        <p className="font-mono text-xs mt-1">
+                          {log.scheduleId}
+                        </p>
                       </div>
                     )}
                   </div>
-                )}
 
-                {log.callback && (
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Callback URL
-                    </h4>
-                    <p className="text-sm font-mono break-all text-muted-foreground">
-                      {log.callback}
-                    </p>
-                  </div>
-                )}
-
-                {log.error && (
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                      Error Details
-                    </h4>
-                    <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                      <pre className="text-xs text-red-800 overflow-x-auto whitespace-pre-wrap">
-                        {log.error}
-                      </pre>
+                  {/* Body Preview */}
+                  {log.body && (
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-sm text-muted-foreground">
+                          RULE INSTRUCTION
+                        </span>
+                        {shouldShowToggle && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleBodyExpansion(messageId)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {isBodyExpanded ? (
+                              <>
+                                <ChevronUp className="size-3 mr-1" />
+                                Collapse
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="size-3 mr-1" />
+                                Expand
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <pre className="text-xs overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed text-left">
+                          {getBodyPreview(log.body, messageId)}
+                        </pre>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+
+                  {/* Additional Info */}
+                  {(log.nextDelivery ||
+                    log.retried !== undefined ||
+                    log.callback ||
+                    log.error) && (
+                    <div className="border-t pt-4 space-y-3">
+                      {log.nextDelivery && (
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-muted-foreground">
+                            Next Delivery:
+                          </span>
+                          <span className="text-xs">
+                            {formatTimestamp(log.nextDelivery)}
+                          </span>
+                        </div>
+                      )}
+
+                      {log.retried !== undefined && (
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium text-muted-foreground">
+                            Retry Count:
+                          </span>
+                          <span className="text-xs">
+                            {log.retried} attempts
+                          </span>
+                        </div>
+                      )}
+
+                      {log.callback && (
+                        <div>
+                          <span className="font-medium text-sm text-muted-foreground">
+                            Callback URL:
+                          </span>
+                          <p className="font-mono text-xs mt-1 break-all text-muted-foreground">
+                            {log.callback}
+                          </p>
+                        </div>
+                      )}
+
+                      {log.error && (
+                        <div>
+                          <span className="font-medium text-sm text-red-600">
+                            Error Details:
+                          </span>
+                          <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-1">
+                            <pre className="text-xs text-red-800 overflow-x-auto whitespace-pre-wrap">
+                              {log.error}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
