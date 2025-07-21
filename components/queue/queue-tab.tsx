@@ -105,24 +105,31 @@ export function QueueTab({ logs, loading, onRefresh }: QueueTabProps) {
   };
 
   const formatBody = (body: string): string => {
-    const isBase64 =
-      /^[A-Za-z0-9+/]*={0,2}$/.test(body) && body.length % 4 === 0;
+    // Try to parse as JSON first
+    try {
+      const parsed = JSON.parse(body);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      // If not JSON, check if it's base64
+      const isBase64 =
+        /^[A-Za-z0-9+/]*={0,2}$/.test(body) && body.length % 4 === 0;
 
-    if (isBase64 && body.length > 20) {
-      try {
-        const decoded = atob(body);
+      if (isBase64 && body.length > 20) {
         try {
-          const parsed = JSON.parse(decoded);
-          return JSON.stringify(parsed, null, 2);
+          const decoded = atob(body);
+          try {
+            const parsed = JSON.parse(decoded);
+            return JSON.stringify(parsed, null, 2);
+          } catch {
+            return decoded;
+          }
         } catch {
-          return decoded;
+          return body;
         }
-      } catch {
-        return body;
       }
-    }
 
-    return body;
+      return body;
+    }
   };
 
   const toggleBodyExpansion = (messageId: string) => {
