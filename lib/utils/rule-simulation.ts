@@ -422,7 +422,20 @@ async function evaluateCondition(
         sourceData = context.treasury;
         break;
       case 'accounts':
-        sourceData = context.accounts;
+        // When checking account conditions, filter to the specific account used in payment
+        if (paymentData?.source) {
+          const targetAccount = context.accounts.find(
+            (account) =>
+              account &&
+              (account.name === paymentData.source ||
+                account.id === paymentData.source ||
+                account.slug === paymentData.source ||
+                account.address === paymentData.source),
+          );
+          sourceData = targetAccount || context.accounts;
+        } else {
+          sourceData = context.accounts;
+        }
         break;
       case 'beneficiaries':
         sourceData = context.beneficiaries;

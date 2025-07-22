@@ -60,6 +60,11 @@ The user's request should be interpreted as modifications to the existing rule, 
 - payment.action: "simple" for single payment, "split" for percentage-based distribution, "calculation" for computed amounts based on formulas or conditions, "leftover" for remaining balance transfers, "batch" for processing collections of invoices or payments
 - payment.source: Source of funds for the payment. Use only verified account slugs: ${availableAccountSlugs.join(', ')}. Default to "operating-account" only when no source is specified by the user
 - payment.beneficiary: Recipients of the payment (array format). Use only verified collection names: ${availableCollections.join(', ')}. Do NOT use individual names, only collection references
+  * For payments to employees: use ["employees"]
+  * For payments to contractors: use ["contractors"] 
+  * For payments to businesses/companies (like Acme Properties, vendors, suppliers): use ["businesses"]
+  * For payments to individuals (non-employee persons): use ["individuals"]
+  * For payments to other accounts: specify the exact account slug as string (not collection)
 - payment.amount: Fixed string amount ("1000.00") or dynamic object with source and optional formula { source, formula }:
   * Fixed: "1000.00", "500.50"
   * Dynamic: {"source": "treasury.revenue"} 
@@ -258,7 +263,7 @@ The user's request should be interpreted as modifications to the existing rule, 
     },
     "conditions": [
         {
-            "source": ""accounts.operating-account",
+            "source": "accounts",
             "field": "balance",
             "operator": ">=",
             "value": 50000,
