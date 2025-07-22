@@ -15,7 +15,7 @@ import {
   CheckCircleIcon,
   FileTextIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Card,
@@ -28,6 +28,12 @@ import { Badge } from '@/components/ui/badge';
 import { formatAmount, formatTimestamp } from '@/lib/utils/formatter';
 import { cronToHuman } from '@/lib/utils/cron';
 import { Separator } from '@/components/ui/separator';
+
+interface ValidationResult {
+  isValid: boolean;
+  errors?: string[];
+  message: string;
+}
 
 interface SimulationResult {
   success: boolean;
@@ -85,6 +91,56 @@ export function RuleTestSidebar() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationResult, setSimulationResult] =
     useState<SimulationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationResult, setValidationResult] =
+    useState<ValidationResult | null>(null);
+
+  // Validate rule using the API endpoint
+  const validateRule = async (rule: any) => {
+    if (!rule) {
+      setValidationResult({
+        isValid: false,
+        errors: ['No rule data provided'],
+        message: 'Rule validation failed',
+      });
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      const response = await fetch('/api/rule/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleData: rule }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Validation failed');
+      }
+
+      setValidationResult(result);
+    } catch (error) {
+      console.error('Validation error:', error);
+      setValidationResult({
+        isValid: false,
+        errors: ['Failed to validate rule: ' + (error instanceof Error ? error.message : 'Unknown error')],
+        message: 'Rule validation failed',
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  // Validate rule when ruleData changes
+  useEffect(() => {
+    if (ruleData && isTestSidebarOpen) {
+      validateRule(ruleData);
+    } else {
+      setValidationResult(null);
+    }
+  }, [ruleData, isTestSidebarOpen]);
 
   // Add validation for malformed rule data
   const isValidRuleData = (
@@ -181,31 +237,66 @@ export function RuleTestSidebar() {
                   {/* Rule Overview */}
                   {ruleData && (
                     <>
-                      {!isValidRuleData(ruleData) && (
+                      {/* Validation Status */}
+                      {isValidating && (
+                        <Card className="bg-blue/10 border-blue/30">
+                          <CardHeader>
+                            <CardTitle className="text-blue-400 flex items-center gap-2">
+                              <LoaderIcon size={16} className="animate-spin" />
+                              Validating Rule
+                            </CardTitle>
+                            <CardDescription>
+                              Checking rule structure and business logic...
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      )}
+
+                      {!isValidating && validationResult && !validationResult.isValid && (
                         <Card className="bg-destructive/10 border-destructive/30">
                           <CardHeader>
                             <CardTitle className="text-destructive">
-                              Invalid Rule Structure
+                              Rule Validation Failed
                             </CardTitle>
                             <CardDescription>
-                              This rule has an invalid structure and cannot be
-                              processed. Expected fields: payment.action,
-                              payment.beneficiary, execution.timing, conditions.
+                              This rule has validation errors that must be fixed before it can be used.
                             </CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <pre className="text-xs overflow-auto bg-muted p-2 rounded">
-                              {JSON.stringify(ruleData, null, 2)}
-                            </pre>
+                          <CardContent className="space-y-3">
+                            {validationResult.errors && validationResult.errors.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="text-sm font-medium text-destructive">
+                                  Validation Errors:
+                                </div>
+                                <div className="space-y-1">
+                                  {validationResult.errors.map((error, idx) => (
+                                    <div key={idx} className="text-sm bg-destructive/20 p-2 rounded border-l-2 border-destructive">
+                                      • {error}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <details className="mt-4">
+                              <summary className="text-sm font-medium cursor-pointer hover:text-foreground">
+                                View Rule Data
+                              </summary>
+                              <pre className="text-xs overflow-auto bg-muted p-2 rounded mt-2 max-h-32">
+                                {JSON.stringify(ruleData, null, 2)}
+                              </pre>
+                            </details>
                           </CardContent>
                         </Card>
                       )}
 
-                      {isValidRuleData(ruleData) && (
+                      {!isValidating && validationResult?.isValid && (
                         <Card className="bg-gradient-to-br from-card to-muted/20 border-border/50">
                           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border/30">
                             <CardTitle className="flex items-center gap-2 mb-1">
                               Rule Overview
+                              <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                                VALID
+                              </Badge>
                             </CardTitle>
                             <CardDescription className="bg-muted/30 p-2 rounded border-l-2 border-purple">
                               Original:{' '}
@@ -557,7 +648,7 @@ export function RuleTestSidebar() {
                   <div className="flex gap-3">
                     <Button
                       onClick={runSimulation}
-                      disabled={isSimulating}
+                      disabled={isSimulating || isValidating || !validationResult?.isValid}
                       className="flex-1"
                       size="lg"
                     >
@@ -574,6 +665,16 @@ export function RuleTestSidebar() {
                       )}
                     </Button>
                   </div>
+                  
+                  {/* Validation message when simulation disabled */}
+                  {(isValidating || !validationResult?.isValid) && (
+                    <div className="text-sm text-muted-foreground text-center p-3 bg-muted/20 rounded border">
+                      {isValidating 
+                        ? "Validating rule before simulation..." 
+                        : "Rule must pass validation before simulation can run"
+                      }
+                    </div>
+                  )}
                 </div>
 
                 {/* Right Column - Simulation Results */}

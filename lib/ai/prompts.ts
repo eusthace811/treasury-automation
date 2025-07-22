@@ -4,6 +4,8 @@ import type {
   Account,
   Employee,
   Contractor,
+  Individual,
+  Business,
   Invoice,
   Treasury,
 } from '@/data/mockup';
@@ -147,6 +149,8 @@ export interface ExtraContext {
   accounts: Account[];
   employees: Employee[];
   contractors: Contractor[];
+  individuals: Individual[];
+  businesses: Business[];
   invoices: Invoice[];
   treasury: Treasury;
 
@@ -176,7 +180,7 @@ ${JSON.stringify(extraContext.currentRule, null, 2)}
 
 ## Business Context:
 
-List of official accounts, beneficiaries (employees and contractors), pending invoices, and a current treasury snapshot. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
+List of official accounts, beneficiaries (employees, contractors, individuals, and businesses), pending invoices, and a current treasury snapshot. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
 
 ### AVAILABLE FIELD NAMES FOR CONDITIONS:
 
@@ -184,10 +188,16 @@ List of official accounts, beneficiaries (employees and contractors), pending in
 id, name, type, address, chainId, currency, balance, createdAt, updatedAt, deletedAt, description, isActive
 
 **EMPLOYEES fields (source: "employees"):**
-id, name, email, role, department, payrollAddress, salary, currency, payFrequency, startDate, isActive, isFounder, equityPercent, createdAt, updatedAt, deletedAt
+id, name, email, role, department, walletAddress, salary, currency, payFrequency, startDate, tags, status, createdAt, updatedAt, deletedAt, type
 
 **CONTRACTORS fields (source: "contractors"):**
-id, name, email, specialty, paymentAddress, hourlyRate, currency, maxHoursPerWeek, contractStart, contractEnd, isActive, tags, createdAt, updatedAt, deletedAt
+id, name, email, role, walletAddress, hourlyRate, currency, maxHoursPerWeek, contractStart, contractEnd, tags, status, createdAt, updatedAt, deletedAt, type
+
+**INDIVIDUALS fields (source: "individuals"):**
+id, name, email, walletAddress, currency, nationalId, tags, status, createdAt, updatedAt, deletedAt, type
+
+**BUSINESSES fields (source: "businesses"):**
+id, name, email, walletAddress, currency, businessId, companyType, contactName, contactPerson, tags, status, createdAt, updatedAt, deletedAt, type
 
 **INVOICES fields (source: "invoices"):**
 id, vendorName, vendorAddress, amount, currency, description, category, dueDate, invoiceDate, approved, approvedBy, approvedAt, priority, recurring, recurringFrequency, tags, status
@@ -197,13 +207,16 @@ name, snapshot.currentMonth.revenue, snapshot.currentMonth.expenses, snapshot.cu
 
 **Example condition usage:**
 - Check account balance: \`{"source": "accounts", "field": "balance", "operator": ">", "value": 50000}\`
-- Check if employee is active: \`{"source": "employees", "field": "isActive", "operator": "==", "value": true}\`
+- Check if employee is active: \`{"source": "employees", "field": "status", "operator": "==", "value": "active"}\`
+- Check if contractor is active: \`{"source": "contractors", "field": "status", "operator": "==", "value": "active"}\`
+- Check if individual is active: \`{"source": "individuals", "field": "status", "operator": "==", "value": "active"}\`
+- Check if business is active: \`{"source": "businesses", "field": "status", "operator": "==", "value": "active"}\`
 - Check invoice amount: \`{"source": "invoices", "field": "amount", "operator": ">=", "value": 1000}\`
 - Check revenue threshold: \`{"source": "treasury", "field": "snapshot.currentMonth.revenue", "operator": ">", "value": 100000}\`
 
 ### DATA LISTINGS:
 
-- COLLECTIONS: accounts, employees, contractors, invoices, treasury
+- COLLECTIONS: accounts, employees, contractors, individuals, businesses, invoices, treasury
 
 - ACCOUNTS:
 ${extraContext.accounts
@@ -225,7 +238,23 @@ ${extraContext.employees
 ${extraContext.contractors
   .map(
     (contractor) =>
-      `- name: "${contractor.name}" | specialty: "${contractor.role}" | hourlyRate: ${contractor.hourlyRate} | currency: "${contractor.currency}" | maxHoursPerWeek: ${contractor.maxHoursPerWeek} | status: ${contractor.status} | email: "${contractor.email}" | walletAddress: "${contractor.walletAddress}" | contractStart: ${contractor.contractStart} | contractEnd: ${contractor.contractEnd} | tags: ${contractor.tags.map((tag) => `"${tag}"`).join(', ')}`,
+      `- name: "${contractor.name}" | role: "${contractor.role}" | hourlyRate: ${contractor.hourlyRate} | currency: "${contractor.currency}" | maxHoursPerWeek: ${contractor.maxHoursPerWeek} | status: ${contractor.status} | email: "${contractor.email}" | walletAddress: "${contractor.walletAddress}" | contractStart: ${contractor.contractStart} | contractEnd: ${contractor.contractEnd} | tags: ${contractor.tags.map((tag) => `"${tag}"`).join(', ')}`,
+  )
+  .join('\n')}
+
+- INDIVIDUALS:
+${extraContext.individuals
+  .map(
+    (individual) =>
+      `- name: "${individual.name}" | email: "${individual.email || 'N/A'}" | nationalId: "${individual.nationalId || 'N/A'}" | currency: "${individual.currency}" | status: ${individual.status} | walletAddress: "${individual.walletAddress}" | tags: ${individual.tags.map((tag) => `"${tag}"`).join(', ')}`,
+  )
+  .join('\n')}
+
+- BUSINESSES:
+${extraContext.businesses
+  .map(
+    (business) =>
+      `- name: "${business.name}" | businessId: "${business.businessId}" | companyType: "${business.companyType}" | contactName: "${business.contactName}" | contactPerson: "${business.contactPerson}" | email: "${business.email || 'N/A'}" | currency: "${business.currency}" | status: ${business.status} | walletAddress: "${business.walletAddress}" | tags: ${business.tags.map((tag) => `"${tag}"`).join(', ')}`,
   )
   .join('\n')}
 

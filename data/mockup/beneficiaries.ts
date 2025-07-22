@@ -1,15 +1,33 @@
-export interface Employee {
+export type Beneficiary = Employee | Contractor | Individual | Business;
+
+export type BeneficiaryType =
+  | 'employee'
+  | 'contractor'
+  | 'individual'
+  | 'business';
+
+interface BaseBeneficiary {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  walletAddress: string;
+  currency: string;
+  tags: string[];
+  status: string;
+  type: BeneficiaryType;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+/** Existing Types with Type field added */
+export interface Employee extends BaseBeneficiary {
+  type: 'employee';
   role: string;
   department: string;
-  walletAddress: string;
   salary: number;
-  currency: string;
   payFrequency: string;
   startDate: number;
-  tags: string[];
   status:
     | 'pending'
     | 'onboarding'
@@ -22,23 +40,15 @@ export interface Employee {
     | 'contract_ended'
     | 'inactive'
     | 'deceased';
-  createdAt: number;
-  updatedAt: number;
-  deletedAt: number | null;
 }
 
-export interface Contractor {
-  id: string;
-  name: string;
-  email: string;
+export interface Contractor extends BaseBeneficiary {
+  type: 'contractor';
   role: string;
-  walletAddress: string;
   hourlyRate: number;
-  currency: string;
   maxHoursPerWeek: number;
   contractStart: number;
   contractEnd: number;
-  tags: string[];
   status:
     | 'pending'
     | 'active'
@@ -46,20 +56,36 @@ export interface Contractor {
     | 'contract_ended'
     | 'terminated'
     | 'inactive';
-  createdAt: number;
-  updatedAt: number;
-  deletedAt: number | null;
+}
+
+/** New Types */
+export interface Individual extends BaseBeneficiary {
+  type: 'individual';
+  nationalId?: string;
+  status: 'active' | 'inactive' | 'deceased';
+}
+
+export interface Business extends BaseBeneficiary {
+  type: 'business';
+  businessId: string;
+  companyType: 'llc' | 'corp' | 'sole_prop' | 'non_profit' | string;
+  contactName: string;
+  contactPerson: string;
+  status: 'active' | 'inactive' | 'dissolved';
 }
 
 export interface BeneficiariesData {
   employees: Employee[];
   contractors: Contractor[];
+  individuals: Individual[];
+  businesses: Business[];
 }
 
 export const beneficiariesData: BeneficiariesData = {
   employees: [
     {
       id: '3e6d37fa-3ef2-4059-bc34-f51ebf083f20',
+      type: 'employee',
       name: 'Sarah Chen',
       email: 'sarah.chen@techflow.com',
       role: 'CEO',
@@ -77,6 +103,7 @@ export const beneficiariesData: BeneficiariesData = {
     },
     {
       id: '83f2c67c-8d7d-4686-a5b0-6a927db104e0',
+      type: 'employee',
       name: 'Mike Torres',
       email: 'mike.torres@techflow.com',
       role: 'CTO',
@@ -94,6 +121,7 @@ export const beneficiariesData: BeneficiariesData = {
     },
     {
       id: 'f367af56-8932-4f2e-b6a4-1c64f39b504e',
+      type: 'employee',
       name: 'David Kim',
       email: 'david.kim@techflow.com',
       role: 'VP Operations',
@@ -111,6 +139,7 @@ export const beneficiariesData: BeneficiariesData = {
     },
     {
       id: 'b52a0675-84aa-4a8c-83a2-15a3a70758e7',
+      type: 'employee',
       name: 'Lisa Park',
       email: 'lisa.park@techflow.com',
       role: 'Head of Marketing',
@@ -130,6 +159,7 @@ export const beneficiariesData: BeneficiariesData = {
   contractors: [
     {
       id: 'bf1a8a3e-0459-4956-a238-19de2d7e8e64',
+      type: 'contractor',
       name: 'Alex Rodriguez',
       email: 'alex@freelancedev.com',
       role: 'Frontend Developer',
@@ -147,6 +177,7 @@ export const beneficiariesData: BeneficiariesData = {
     },
     {
       id: '171a5929-dc4f-476f-8166-2d52e8f0d92a',
+      type: 'contractor',
       name: 'Jordan Thompson',
       email: 'jordan@designstudio.co',
       role: 'UI/UX Designer',
@@ -164,6 +195,7 @@ export const beneficiariesData: BeneficiariesData = {
     },
     {
       id: 'be0a296c-09a1-4691-adef-3be23ea96141',
+      type: 'contractor',
       name: 'Taylor Kim',
       email: 'taylor@contentpro.net',
       role: 'Content Writer',
@@ -180,4 +212,23 @@ export const beneficiariesData: BeneficiariesData = {
       deletedAt: null,
     },
   ],
+  businesses: [
+    {
+      id: '171a5929-dc4f-4888-8166-2d52e8f0d92a',
+      type: 'business',
+      businessId: '14382498',
+      companyType: 'llc',
+      name: 'Acme Properties',
+      contactName: 'Anthony Sanders',
+      contactPerson: 'anthony@acme.com',
+      walletAddress: '0x0000000000000000000000000000000000000000',
+      currency: 'USDC',
+      tags: ['business'],
+      status: 'active',
+      createdAt: 1721260800,
+      updatedAt: 1752796800,
+      deletedAt: null,
+    },
+  ],
+  individuals: [],
 };

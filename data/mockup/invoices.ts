@@ -133,7 +133,7 @@ export const invoicesData: InvoicesData = {
     },
     {
       id: '8decb981-9dad-11d1-80b4-00c04fd430c8',
-      vendorName: 'Downtown Property Group',
+      vendorName: 'Acme Properties',
       vendorAddress: '0x0000000000000000000000000000000000000000',
       amount: 2500.0,
       currency: 'USDC',

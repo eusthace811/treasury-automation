@@ -34,6 +34,7 @@ import { ruleAnswer } from '@/lib/ai/tools/rule-answer';
 import {
   accountsData,
   employeesData,
+  beneficiariesData,
   invoicesData,
   treasuryData,
 } from '@/data/mockup';
@@ -159,6 +160,8 @@ export async function POST(request: Request) {
       accounts: accountsData.accounts,
       employees: employeesData.employees,
       contractors: employeesData.contractors,
+      individuals: beneficiariesData.individuals,
+      businesses: beneficiariesData.businesses,
       invoices: invoicesData.invoices,
       treasury: treasuryData.treasury,
 
