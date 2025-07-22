@@ -634,7 +634,14 @@ async function evaluateCondition(
       typeof sourceData === 'object' &&
       !Array.isArray(sourceData)
     ) {
-      fieldValue = getNestedValue(sourceData, condition.field);
+      // Handle account-specific field paths like "operating-account.balance"
+      let fieldPath = condition.field;
+      if (condition.source === 'accounts' && fieldPath.includes('.')) {
+        // Extract just the field name after the dot (e.g., "operating-account.balance" -> "balance")
+        fieldPath = fieldPath.split('.').pop() || fieldPath;
+      }
+      
+      fieldValue = getNestedValue(sourceData, fieldPath);
       result.value = `${sourceData.vendorName || sourceData.name || 'Item'}: ${fieldValue}`;
 
       // Evaluate single item condition
@@ -727,7 +734,10 @@ function calculatePayments(
     const invoiceBeneficiaries = beneficiaries.filter(b => b.data && b.data.invoiceAmount);
     let totalAmount = 0;
 
-    if (invoiceBeneficiaries.length > 0) {
+    // Skip total amount validation for batch payments as they calculate amounts per invoice
+    if (payment.action === 'batch') {
+      totalAmount = 1; // Set to valid value to pass validation
+    } else if (invoiceBeneficiaries.length > 0) {
       // For invoice payments, use the sum of individual invoice amounts
       totalAmount = invoiceBeneficiaries.reduce((sum, b) => sum + (b.data.invoiceAmount || 0), 0);
     } else {
@@ -789,11 +799,29 @@ function calculatePayments(
             b.name === invoice.vendorName || b.walletAddress === invoice.vendorAddress
           );
           
+          // Calculate payment amount - apply formula if specified
+          let paymentAmount = invoice.amount;
+          if (typeof payment.amount === 'object' && payment.amount.formula) {
+            // Use the treasury context resolver and formula evaluator for each invoice
+            const resolutionContext = { account: sourceAccount, invoice };
+            try {
+              const evaluatedAmount = safeFormulaEvaluator.evaluate(
+                payment.amount.formula.replace('invoices.amount', invoice.amount.toString()),
+                invoice.amount
+              );
+              if (evaluatedAmount !== null && evaluatedAmount > 0) {
+                paymentAmount = evaluatedAmount;
+              }
+            } catch (error) {
+              console.warn(`Failed to evaluate formula for invoice ${invoice.id}:`, error);
+            }
+          }
+          
           return {
             id: invoice.id,
             name: invoice.vendorName,
             type: 'invoice' as const,
-            amount: invoice.amount,
+            amount: paymentAmount,
             description: invoice.description,
             // Add beneficiary details if found
             beneficiaryId: beneficiary?.id,

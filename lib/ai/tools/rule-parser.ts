@@ -248,29 +248,28 @@ The user's request should be interpreted as modifications to the existing rule, 
 {
     "original": "Every month on the 25th, pay rent of $12,000 to Acme Properties, but only if we have at least $50,000 in our operating account",
     "memo": "Every month on the 25th, pay $12,000 USDC as rent from the operating account to the property-related accounts, only if the operating account balance is at least $50,000.",
-    "payment":
+    "payment": 
     {
         "action": "simple",
         "amount": "12000",
         "source": "operating-account",
         "currency": "USDC",
-        "beneficiary": ["businesses"]
+        "beneficiary": ["0x0000000000000000000000000000000000000000"]
     },
     "execution":
     {
         "cron": "0 0 25 * *",
         "timing": "schedule"
     },
-    "conditions": [
-        {
-            "source": "accounts",
-            "field": "balance",
-            "operator": ">=",
-            "value": 50000,
-            "description": "Operating account balance must be at least $50,000 before paying rent"
-        }
-    ]
-}
+    "conditions": [{
+        "when": "before",
+        "field": "balance",
+        "operator": ">=",
+        "value": 50000,
+        "source": "accounts",
+        "description": "Operating account balance must be at least $50,000 before paying rent"
+    }]
+  }
 
 ${existingRule ? 'PRESERVE all existing field values unless the user specifically requests changes to those fields.' : 'Extract timing information, payment details, conditions, and any other relevant information.'}
 
