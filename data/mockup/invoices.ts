@@ -134,8 +134,8 @@ export const invoicesData: InvoicesData = {
     {
       id: '8decb981-9dad-11d1-80b4-00c04fd430c8',
       vendorName: 'Acme Properties',
-      vendorAddress: '0x0000000000000000000000000000000000000000',
-      amount: 2500.0,
+      vendorAddress: '0x1000000000000000000000000000000000000000',
+      amount: 12000.0,
       currency: 'USDC',
       description: 'Office rent',
       category: 'rent',

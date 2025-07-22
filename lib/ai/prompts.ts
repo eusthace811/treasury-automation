@@ -180,7 +180,7 @@ ${JSON.stringify(extraContext.currentRule, null, 2)}
 
 ## Business Context:
 
-List of official accounts, beneficiaries (employees, contractors, individuals, and businesses), pending invoices, and a current treasury snapshot. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
+List of collections: accounts, employees, contractors, individuals, businesses, invoices, and treasury. Use this context to guide decisions—payments can be made between accounts or from an account to a beneficiary.
 
 ### AVAILABLE FIELD NAMES FOR CONDITIONS:
 
@@ -215,8 +215,6 @@ name, snapshot.currentMonth.revenue, snapshot.currentMonth.expenses, snapshot.cu
 - Check revenue threshold: \`{"source": "treasury", "field": "snapshot.currentMonth.revenue", "operator": ">", "value": 100000}\`
 
 ### DATA LISTINGS:
-
-- COLLECTIONS: accounts, employees, contractors, individuals, businesses, invoices, treasury
 
 - ACCOUNTS:
 ${extraContext.accounts
