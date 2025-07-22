@@ -1,9 +1,16 @@
 import type { TreasuryRuleData } from './schema';
 import { accountsData, type Account } from '@/data/mockup/accounts';
-import { beneficiariesData, type Employee, type Contractor } from '@/data/mockup/beneficiaries';
+import {
+  beneficiariesData,
+  type Employee,
+  type Contractor,
+} from '@/data/mockup/beneficiaries';
 import { transactionsData, type Transaction } from '@/data/mockup/transactions';
 import { treasuryData } from '@/data/mockup/treasury';
-import { treasuryContextResolver, type AmountResolutionContext } from './context-resolver';
+import {
+  treasuryContextResolver,
+  type AmountResolutionContext,
+} from './context-resolver';
 import { safeFormulaEvaluator } from './formula-evaluator';
 
 export interface SimulationResult {
@@ -66,7 +73,7 @@ export interface TreasuryImpact {
 
 export class TreasurySimulator {
   private static instance: TreasurySimulator;
-  
+
   public static getInstance(): TreasurySimulator {
     if (!TreasurySimulator.instance) {
       TreasurySimulator.instance = new TreasurySimulator();
@@ -79,11 +86,11 @@ export class TreasurySimulator {
    */
   async simulatePayment(
     chatId: string,
-    ruleData: TreasuryRuleData
+    ruleData: TreasuryRuleData,
   ): Promise<SimulationResult> {
     try {
       console.log('🎭 Starting payment simulation for chat:', chatId);
-      
+
       const result: SimulationResult = {
         success: true,
         message: '',
@@ -96,7 +103,7 @@ export class TreasurySimulator {
 
       // Build context for amount resolution
       const context: AmountResolutionContext = {};
-      
+
       // Validate and extract payment amount
       const paymentAmount = this.extractPaymentAmount(ruleData, context);
       if (!paymentAmount || paymentAmount <= 0) {
@@ -109,7 +116,9 @@ export class TreasurySimulator {
       const sourceAccount = this.findAccount(ruleData.payment.source);
       if (!sourceAccount) {
         result.success = false;
-        result.errors.push(`Source account not found: ${ruleData.payment.source}`);
+        result.errors.push(
+          `Source account not found: ${ruleData.payment.source}`,
+        );
         return result;
       }
 
@@ -117,7 +126,7 @@ export class TreasurySimulator {
       if (sourceAccount.balance < paymentAmount) {
         result.success = false;
         result.errors.push(
-          `Insufficient funds: ${sourceAccount.balance} < ${paymentAmount} USDC`
+          `Insufficient funds: ${sourceAccount.balance} < ${paymentAmount} USDC`,
         );
         return result;
       }
@@ -126,7 +135,10 @@ export class TreasurySimulator {
       const treasuryBefore = this.calculateTreasurySnapshot();
 
       // Execute payment breakdown
-      const paymentBreakdown = this.calculatePaymentBreakdown(ruleData, paymentAmount);
+      const paymentBreakdown = this.calculatePaymentBreakdown(
+        ruleData,
+        paymentAmount,
+      );
       if (!paymentBreakdown.success) {
         result.success = false;
         result.errors.push(...paymentBreakdown.errors);
@@ -150,7 +162,7 @@ export class TreasurySimulator {
           beneficiary,
           payment.amount,
           ruleData,
-          timestamp
+          timestamp,
         );
 
         // Add to transaction history
@@ -159,7 +171,7 @@ export class TreasurySimulator {
           type: transaction.type,
           amount: transaction.amount,
           currency: transaction.currency,
-          fromAddress: sourceAccount.address,
+          fromAddress: sourceAccount.walletAddress,
           toAddress: transaction.beneficiary_address,
           description: transaction.description,
           category: transaction.category,
@@ -193,7 +205,10 @@ export class TreasurySimulator {
 
       // Calculate treasury impact after execution
       const treasuryAfter = this.calculateTreasurySnapshot();
-      const treasuryImpact = this.calculateTreasuryImpact(treasuryBefore, treasuryAfter);
+      const treasuryImpact = this.calculateTreasuryImpact(
+        treasuryBefore,
+        treasuryAfter,
+      );
 
       // Generate metadata
       result.metadata = {
@@ -204,18 +219,23 @@ export class TreasurySimulator {
         total_amount: totalExecuted,
         beneficiary_count: ruleData.payment.beneficiary.length,
         transaction_count: result.transactions.length,
-        estimated_gas_cost: result.transactions.reduce((sum, tx) => sum + tx.gas_fee, 0),
+        estimated_gas_cost: result.transactions.reduce(
+          (sum, tx) => sum + tx.gas_fee,
+          0,
+        ),
         treasury_impact: treasuryImpact,
       };
 
       result.success = result.errors.length === 0;
-      result.message = result.success 
+      result.message = result.success
         ? `Successfully simulated ${totalExecuted} USDC payment to ${result.transactions.length} beneficiaries`
         : `Simulation failed: ${result.errors.join(', ')}`;
 
-      console.log('🎭 Payment simulation completed:', result.success ? 'SUCCESS' : 'FAILED');
+      console.log(
+        '🎭 Payment simulation completed:',
+        result.success ? 'SUCCESS' : 'FAILED',
+      );
       return result;
-      
     } catch (error) {
       console.error('❌ Payment simulation failed:', error);
       return {
@@ -230,54 +250,72 @@ export class TreasurySimulator {
     }
   }
 
-  private extractPaymentAmount(ruleData: TreasuryRuleData, context?: AmountResolutionContext): number | null {
+  private extractPaymentAmount(
+    ruleData: TreasuryRuleData,
+    context?: AmountResolutionContext,
+  ): number | null {
     // Handle simple string amounts
     if (typeof ruleData.payment.amount === 'string') {
-      const amount = parseFloat(ruleData.payment.amount);
-      return isNaN(amount) ? null : amount;
+      const amount = Number.parseFloat(ruleData.payment.amount);
+      return Number.isNaN(amount) ? null : amount;
     }
-    
+
     // Handle dynamic amounts with source + formula structure
-    if (typeof ruleData.payment.amount === 'object' && 'source' in ruleData.payment.amount) {
+    if (
+      typeof ruleData.payment.amount === 'object' &&
+      'source' in ruleData.payment.amount
+    ) {
       const { source, formula } = ruleData.payment.amount;
-      
+
       // Resolve the source value using context resolver
       const sourceValue = treasuryContextResolver.resolve(source, context);
       if (sourceValue === null) {
         console.warn(`Failed to resolve payment amount source: ${source}`);
         return null;
       }
-      
+
       // Apply formula if provided
       if (formula) {
-        const evaluatedAmount = safeFormulaEvaluator.evaluate(formula, sourceValue);
+        const evaluatedAmount = safeFormulaEvaluator.evaluate(
+          formula,
+          sourceValue,
+        );
         if (evaluatedAmount === null) {
           console.warn(`Failed to evaluate payment amount formula: ${formula}`);
           return null;
         }
         return evaluatedAmount;
       }
-      
+
       return sourceValue;
     }
-    
+
     return null;
   }
 
   private findAccount(accountIdentifier: string): Account | undefined {
-    return accountsData.accounts.find(acc => 
-      acc.id === accountIdentifier || 
-      acc.name === accountIdentifier || 
-      acc.slug === accountIdentifier ||
-      acc.address === accountIdentifier
+    return accountsData.accounts.find(
+      (acc) =>
+        acc.id === accountIdentifier ||
+        acc.name === accountIdentifier ||
+        acc.slug === accountIdentifier ||
+        acc.walletAddress === accountIdentifier,
     );
   }
 
-  private findBeneficiary(beneficiaryId: string): Employee | Contractor | undefined {
-    return [...beneficiariesData.employees, ...beneficiariesData.contractors].find(b => b.id === beneficiaryId);
+  private findBeneficiary(
+    beneficiaryId: string,
+  ): Employee | Contractor | undefined {
+    return [
+      ...beneficiariesData.employees,
+      ...beneficiariesData.contractors,
+    ].find((b) => b.id === beneficiaryId);
   }
 
-  private calculatePaymentBreakdown(ruleData: TreasuryRuleData, totalAmount: number) {
+  private calculatePaymentBreakdown(
+    ruleData: TreasuryRuleData,
+    totalAmount: number,
+  ) {
     const result = {
       success: true,
       errors: [] as string[],
@@ -288,7 +326,9 @@ export class TreasurySimulator {
       case 'simple':
         if (ruleData.payment.beneficiary.length !== 1) {
           result.success = false;
-          result.errors.push('Simple payment must have exactly one beneficiary');
+          result.errors.push(
+            'Simple payment must have exactly one beneficiary',
+          );
         } else {
           result.payments.push({
             beneficiaryId: ruleData.payment.beneficiary[0],
@@ -298,9 +338,15 @@ export class TreasurySimulator {
         break;
 
       case 'split':
-        if (!ruleData.payment.percentages || ruleData.payment.percentages.length !== ruleData.payment.beneficiary.length) {
+        if (
+          !ruleData.payment.percentages ||
+          ruleData.payment.percentages.length !==
+            ruleData.payment.beneficiary.length
+        ) {
           result.success = false;
-          result.errors.push('Split payment requires percentages for each beneficiary');
+          result.errors.push(
+            'Split payment requires percentages for each beneficiary',
+          );
         } else {
           ruleData.payment.beneficiary.forEach((beneficiaryId, index) => {
             const percentage = ruleData.payment.percentages![index];
@@ -316,7 +362,7 @@ export class TreasurySimulator {
       case 'calculation':
       case 'leftover':
         const equalAmount = totalAmount / ruleData.payment.beneficiary.length;
-        ruleData.payment.beneficiary.forEach(beneficiaryId => {
+        ruleData.payment.beneficiary.forEach((beneficiaryId) => {
           result.payments.push({
             beneficiaryId,
             amount: Math.round(equalAmount * 100) / 100,
@@ -326,7 +372,9 @@ export class TreasurySimulator {
 
       default:
         result.success = false;
-        result.errors.push(`Unknown payment action: ${ruleData.payment.action}`);
+        result.errors.push(
+          `Unknown payment action: ${ruleData.payment.action}`,
+        );
     }
 
     return result;
@@ -337,7 +385,7 @@ export class TreasurySimulator {
     beneficiary: Employee | Contractor,
     amount: number,
     ruleData: TreasuryRuleData,
-    timestamp: number
+    timestamp: number,
   ): SimulatedTransaction {
     return {
       id: `sim_tx_${timestamp}_${Math.random().toString(36).substring(2, 8)}`,
@@ -358,9 +406,12 @@ export class TreasurySimulator {
     };
   }
 
-  private determineCategory(ruleData: TreasuryRuleData, beneficiary: Employee | Contractor): string {
+  private determineCategory(
+    ruleData: TreasuryRuleData,
+    beneficiary: Employee | Contractor,
+  ): string {
     const original = ruleData.original.toLowerCase();
-    
+
     // Category mapping based on keywords
     const categoryMap = {
       salary: 'payroll',
@@ -384,7 +435,8 @@ export class TreasurySimulator {
     }
 
     // Fallback to beneficiary type - check if contractor by checking for specific contractor properties
-    const isContractor = 'hourlyRate' in beneficiary || 'projectType' in beneficiary;
+    const isContractor =
+      'hourlyRate' in beneficiary || 'projectType' in beneficiary;
     return isContractor ? 'contractor_payment' : 'employee_payment';
   }
 
@@ -399,9 +451,9 @@ export class TreasurySimulator {
 
   private calculateTreasurySnapshot() {
     const totalBalance = accountsData.accounts
-      .filter(acc => acc.isActive && !acc.deletedAt)
+      .filter((acc) => acc.isActive && !acc.deletedAt)
       .reduce((sum, acc) => sum + acc.balance, 0);
-    
+
     return {
       total_balance: totalBalance,
       monthly_burn_rate: treasuryData.treasury.monthlyBurnRate,
@@ -412,14 +464,17 @@ export class TreasurySimulator {
   private calculateTreasuryImpact(before: any, after: any): TreasuryImpact {
     const runwayReductionMonths = before.runway_months - after.runway_months;
     const runwayReductionDays = runwayReductionMonths * 30;
-    
+
     return {
       total_balance_before: before.total_balance,
       total_balance_after: after.total_balance,
       runway_before_months: before.runway_months,
       runway_after_months: after.runway_months,
       runway_reduction_days: Math.round(runwayReductionDays * 10) / 10,
-      burn_rate_impact_percent: ((before.total_balance - after.total_balance) / before.monthly_burn_rate) * 100,
+      burn_rate_impact_percent:
+        ((before.total_balance - after.total_balance) /
+          before.monthly_burn_rate) *
+        100,
     };
   }
 
@@ -444,20 +499,25 @@ export class TreasurySimulator {
    */
   validateEnvironment(): { valid: boolean; issues: string[] } {
     const issues: string[] = [];
-    
+
     if (accountsData.accounts.length === 0) {
       issues.push('No accounts available for simulation');
     }
-    
-    if (beneficiariesData.employees.length === 0 && beneficiariesData.contractors.length === 0) {
+
+    if (
+      beneficiariesData.employees.length === 0 &&
+      beneficiariesData.contractors.length === 0
+    ) {
       issues.push('No beneficiaries available for simulation');
     }
-    
-    const activeAccounts = accountsData.accounts.filter(acc => acc.isActive && !acc.deletedAt);
+
+    const activeAccounts = accountsData.accounts.filter(
+      (acc) => acc.isActive && !acc.deletedAt,
+    );
     if (activeAccounts.length === 0) {
       issues.push('No active accounts available for simulation');
     }
-    
+
     return {
       valid: issues.length === 0,
       issues,
