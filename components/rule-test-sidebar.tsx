@@ -125,7 +125,10 @@ export function RuleTestSidebar() {
       console.error('Validation error:', error);
       setValidationResult({
         isValid: false,
-        errors: ['Failed to validate rule: ' + (error instanceof Error ? error.message : 'Unknown error')],
+        errors: [
+          `Failed to validate rule:
+            ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ],
         message: 'Rule validation failed',
       });
     } finally {
@@ -252,49 +255,61 @@ export function RuleTestSidebar() {
                         </Card>
                       )}
 
-                      {!isValidating && validationResult && !validationResult.isValid && (
-                        <Card className="bg-destructive/10 border-destructive/30">
-                          <CardHeader>
-                            <CardTitle className="text-destructive">
-                              Rule Validation Failed
-                            </CardTitle>
-                            <CardDescription>
-                              This rule has validation errors that must be fixed before it can be used.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            {validationResult.errors && validationResult.errors.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="text-sm font-medium text-destructive">
-                                  Validation Errors:
-                                </div>
-                                <div className="space-y-1">
-                                  {validationResult.errors.map((error, idx) => (
-                                    <div key={idx} className="text-sm bg-destructive/20 p-2 rounded border-l-2 border-destructive">
-                                      • {error}
+                      {!isValidating &&
+                        validationResult &&
+                        !validationResult.isValid && (
+                          <Card className="bg-destructive/10 border-destructive/30">
+                            <CardHeader>
+                              <CardTitle className="text-destructive">
+                                Rule Validation Failed
+                              </CardTitle>
+                              <CardDescription>
+                                This rule has validation errors that must be
+                                fixed before it can be used.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {validationResult.errors &&
+                                validationResult.errors.length > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="text-sm font-medium text-destructive">
+                                      Validation Errors:
                                     </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            <details className="mt-4">
-                              <summary className="text-sm font-medium cursor-pointer hover:text-foreground">
-                                View Rule Data
-                              </summary>
-                              <pre className="text-xs overflow-auto bg-muted p-2 rounded mt-2 max-h-32">
-                                {JSON.stringify(ruleData, null, 2)}
-                              </pre>
-                            </details>
-                          </CardContent>
-                        </Card>
-                      )}
+                                    <div className="space-y-1">
+                                      {validationResult.errors.map(
+                                        (error, idx) => (
+                                          <div
+                                            key={`validation-error-${error}`}
+                                            className="text-sm bg-destructive/20 p-2 rounded border-l-2 border-destructive"
+                                          >
+                                            • {error}
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              <details className="mt-4">
+                                <summary className="text-sm font-medium cursor-pointer hover:text-foreground">
+                                  View Rule Data
+                                </summary>
+                                <pre className="text-xs overflow-auto bg-muted p-2 rounded mt-2 max-h-32">
+                                  {JSON.stringify(ruleData, null, 2)}
+                                </pre>
+                              </details>
+                            </CardContent>
+                          </Card>
+                        )}
 
                       {!isValidating && validationResult?.isValid && (
                         <Card className="bg-gradient-to-br from-card to-muted/20 border-border/50">
                           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border/30">
                             <CardTitle className="flex items-center gap-2 mb-1">
                               Rule Overview
-                              <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                              <Badge
+                                variant="secondary"
+                                className="bg-green-500/20 text-green-400 border-green-500/30"
+                              >
                                 VALID
                               </Badge>
                             </CardTitle>
@@ -648,7 +663,11 @@ export function RuleTestSidebar() {
                   <div className="flex gap-3">
                     <Button
                       onClick={runSimulation}
-                      disabled={isSimulating || isValidating || !validationResult?.isValid}
+                      disabled={
+                        isSimulating ||
+                        isValidating ||
+                        !validationResult?.isValid
+                      }
                       className="flex-1"
                       size="lg"
                     >
@@ -665,14 +684,13 @@ export function RuleTestSidebar() {
                       )}
                     </Button>
                   </div>
-                  
+
                   {/* Validation message when simulation disabled */}
                   {(isValidating || !validationResult?.isValid) && (
                     <div className="text-sm text-muted-foreground text-center p-3 bg-muted/20 rounded border">
-                      {isValidating 
-                        ? "Validating rule before simulation..." 
-                        : "Rule must pass validation before simulation can run"
-                      }
+                      {isValidating
+                        ? 'Validating rule before simulation...'
+                        : 'Rule must pass validation before simulation can run'}
                     </div>
                   )}
                 </div>
@@ -801,15 +819,15 @@ export function RuleTestSidebar() {
                                             {payment.fromAccount.slug}
                                           </span>
                                         </div>
-                                        <div className="text-base text-muted-foreground">
+                                        <div className="text-base">
                                           {/* Balance:{' '} */}
-                                          <p className="font-mono">
+                                          <p className="font-mono text-black dark:text-muted-foreground">
                                             Previous BALANCE:{' '}
                                             {payment.fromAccount.balance.toLocaleString()}{' '}
                                             {payment.currency}
                                           </p>{' '}
                                           {/* →{' '} */}
-                                          <p className="text-xl font-mono font-semibold text-white">
+                                          <p className="text-xl font-mono font-semibold text-black dark:text-muted-foreground">
                                             New BALANCE:{' '}
                                             {payment.fromAccount.balanceAfter.toLocaleString()}{' '}
                                             {payment.currency}
