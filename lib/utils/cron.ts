@@ -72,7 +72,7 @@ export function formatCondition(condition: {
  * Format payment for human reading
  */
 export function formatPayment(payment: {
-  action: 'simple' | 'split' | 'calculation' | 'leftover';
+  action: 'simple' | 'split' | 'calculation' | 'leftover' | 'batch';
   source: string;
   amount: any;
   currency: string;
@@ -137,6 +137,9 @@ export function formatPayment(payment: {
 
     case 'leftover':
       return `Distribute remaining ${currency} from ${source} to ${beneficiaryText}`;
+
+    case 'batch':
+      return `Batch process ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
 
     default:
       return `Pay ${amountText} in ${currency} from ${source} to ${beneficiaryText}`;
