@@ -105,8 +105,8 @@ Complete end-to-end treasury rule processing:
 #### **Treasury Schema & Types** (`lib/treasury/`)
 Comprehensive rule definitions supporting:
 - **Execution Types**: `once`, `schedule`, `hook`
-- **Payment Actions**: `simple`, `split`, `calculation`, `leftover`
-- **Conditional Logic**: Before/after execution conditions
+- **Payment Actions**: `simple`, `split`, `calculation`, `leftover`, `batch`
+- **Conditional Logic**: Before/after execution conditions [optional]
 - **Amount Handling**: Static amounts and dynamic calculations
 - **Strong TypeScript typing** throughout
 
@@ -169,11 +169,10 @@ Advanced content creation and editing system supporting:
 - `rule-parser`: Natural language to treasury rule conversion
 - `rule-evaluator`: Rule conflict analysis
 - `rule-validator`: Rule validation and business logic checking
-- `rule-saver`: Rule CRUD operations
 - `rule-updater`: Rule updates with QStash integration
 - `rule-answer`: Structured rule operation responses
 
-**General**:
+**General**: not being used
 - `get-weather`: Weather data retrieval
 - `create-document`: Artifact creation
 - `update-document`: Artifact modification

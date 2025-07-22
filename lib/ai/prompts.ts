@@ -209,7 +209,7 @@ name, snapshot.currentMonth.revenue, snapshot.currentMonth.expenses, snapshot.cu
 ${extraContext.accounts
   .map(
     (account) =>
-      `- slug: "${account.slug}" | name: "${account.name}" | currency: "${account.currency}" | balance: ${account.balance} | description: "${account.description}" | isActive: ${account.isActive} | address: "${account.address}" | type: "${account.type}"`,
+      `- slug: "${account.slug}" | name: "${account.name}" | currency: "${account.currency}" | balance: ${account.balance} | description: "${account.description}" | isActive: ${account.isActive} | walletAddress: "${account.walletAddress}" | type: "${account.type}"`,
   )
   .join('\n')}
 

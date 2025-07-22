@@ -1,6 +1,12 @@
 import { tool, generateObject } from 'ai';
 import { z } from 'zod';
 import { treasuryRuleSchema } from '@/lib/treasury/schema';
+import {
+  generateAvailableSources,
+  generateAvailableCollections,
+  generateAvailableTags,
+  generateAvailableAccountSlugs,
+} from '@/lib/utils/source-generator';
 
 import { chatModels } from '../models';
 import { myProvider } from '../providers';
@@ -21,6 +27,13 @@ export const ruleParser = tool({
   execute: async ({ naturalLanguageRule, existingRule }) => {
     try {
       const currentTime = new Date().toISOString();
+
+      // Generate dynamic context
+      const availableSources = generateAvailableSources();
+      const availableCollections = generateAvailableCollections();
+      const availableTags = generateAvailableTags();
+      const availableAccountSlugs = generateAvailableAccountSlugs();
+
       const result = await generateObject({
         model: myProvider.languageModel(chatModels[0]?.id),
         prompt: `${existingRule ? 'UPDATE' : 'PARSE'} the following natural language treasury rule into a structured format:
@@ -44,99 +57,30 @@ The user's request should be interpreted as modifications to the existing rule, 
 - execution.at: UNIX timestamp (future timestamp) if timing is "once" - use current time ${currentTime ? ` (${currentTime}, which is ${Math.floor(new Date(currentTime).getTime() / 1000)} in UNIX format)` : ''} + delay in seconds (at least 5 minutes)
 - execution.cron: standard 5-field UNIX cron expression (minute hour day month weekday) when timing is "schedule" - do NOT include seconds field
 - execution.hooks: array of {type, target} if timing is "hook"
-- payment.action: "simple" for single payment, "split" for percentage-based distribution, "calculation" for computed amounts based on formulas or conditions, "leftover" for remaining balance transfers
-- payment.source: Source of funds for the payment. Always use the exact account slug or wallet address as they appear in the context - do not guess or modify identifiers. Default to "operating-account" only when no source is specified by the user
-- payment.beneficiary: Recipients of the payment (array format). Reference only verified recipients from context: account slugs, wallet addresses, or predefined collections. Ensure each beneficiary exists before including
-- payment.amount: Fixed string amount ("1000") or dynamic object with source and optional formula:
-  * Fixed: "1000", "500.50"
+- payment.action: "simple" for single payment, "split" for percentage-based distribution, "calculation" for computed amounts based on formulas or conditions, "leftover" for remaining balance transfers, "batch" for processing collections of invoices or payments
+- payment.source: Source of funds for the payment. Use only verified account slugs: ${availableAccountSlugs.join(', ')}. Default to "operating-account" only when no source is specified by the user
+- payment.beneficiary: Recipients of the payment (array format). Use only verified collection names: ${availableCollections.join(', ')}. Do NOT use individual names, only collection references
+- payment.amount: Fixed string amount ("1000.00") or dynamic object with source and optional formula { source, formula }:
+  * Fixed: "1000.00", "500.50"
   * Dynamic: {"source": "treasury.revenue"} 
   * Dynamic with formula: {"source": "treasury.revenue", "formula": "* 0.1"}
-  * Dynamic with complex formula: {"source": "accounts.operating.balance", "formula": "* 0.05 + 100"}
-  * Available sources: treasury.* (revenue, expenses, netProfit, totalAssets, monthlyBurnRate, runway), 
-                      accounts.{slug}.balance, invoice.amount, employees.total-salary, contractors.total-rate
+  * Dynamic with complex formula: {"source": "accounts.operating-account.balance", "formula": "* 0.05 + 100"}
+  * ${availableSources}
 - payment.currency: currency symbol ("USDC", "ETH", etc.) - if not specified, preserve existing or default to "USDC"
-- payment.percentages: array of percentages (must sum to 100) if action is "split"
-- conditions: array of conditions that must be met
-- conditions.source: data collection to query ("accounts", "employees", "treasury") - NOT the payment source
+- payment.percentages: array of percentages (must sum to 100) if action is "split"  
+- payment.tags: array of tags for filtering beneficiaries or items. REQUIRED for batch payments to filter invoices/items. OPTIONAL for split payments to filter beneficiaries within collections (e.g., employees with tag "founder"). Available tags: ${availableTags.join(', ')}
+- conditions [optional]: array of conditions that must be met
+- conditions.source: data collection to query. Available collections: ${availableCollections.join(', ')} - NOT the payment source
 - original: ${existingRule ? 'update this with the new user request' : 'the exact original rule text'}
-- memo: optional human-readable description
+- memo: human-readable description of the rule
 
-## Examples:
-Example 1:
-- Input: "Pay our contractors every Friday if their invoice is approved"
-- Output: 
-{
-    "original": "Pay our contractors every Friday if their invoice is approved.",
-    "memo": "Pay all approved contractor invoices every Friday at 0:00 AM UTC.",
-    "payment":
-    {
-        "action": "simple",
-        "amount":
-        {
-            "source": "invoices.amount",
-        },
-        "source": "operating-account",
-        "currency": "USDC",
-        "beneficiary": ["contractors"]
-    },
-    "execution":
-    {
-        "cron": "0 0 * * 5",
-        "timing": "schedule"
-    },
-    "conditions":
-    [
-        {
-            "source": "invoices",
-            "field": "status",
-            "operator": "==",
-            "value": "approved",
-            "description": "Invoice must be approved"
-        }
-    ]
-}
-
-Example 2:
-- Input: "Send 10% of revenue above $50k to our growth fund monthly"
-- Output: 
-{
-    "original": "Send 10% of revenue above $50k to our growth fund monthly.",
-    "memo": "Send 10% of monthly revenue above $50,000 to the growth fund at 00:00 AM UTC on the 1st of each month.",
-    "payment": 
-    {
-        "action": "calculation",
-        "amount":
-        {
-            "source": "treasury.revenue",
-            "formula": "* 0.1"
-        },
-        "source": "sales-revenue",
-        "currency": "USDC",
-        "beneficiary": ["Growth Fund"]
-    },
-    "execution":
-    {
-        "cron": "0 0 1 * *",
-        "timing": "schedule"
-    },
-    "conditions":
-    [
-        {
-            "source": "accounts",     
-            "field": "revenue",
-            "operator": ">",
-            "value": 50000,
-            "description": "Monthly revenue must be above $50,000"
-        }
-    ]
-}
-
-Example 3: 
+## Examples of VALID rules:
+### Example 1:
 - Input: "Split profits 60/40 between founders after expenses"
 - Output:
 {
     "original": "Split profits 60/40 between founders after expenses.",
-    "memo": "Split profits after expenses between founders: 60% to founder1, 40% to founder2. One-time action.",
+    "memo": "Split profits after expenses between founders: 60% to founder1, 40% to founder2. Beneficiaries are employees with tags 'founder'. Profits default to being split from the 'profit-pool-sharing' account unless stated otherwise. One-time action.",
     "payment":
     {
         "action": "split",
@@ -146,8 +90,9 @@ Example 3:
         },
         "source": "profit-sharing-pool", 
         "currency": "USDC",
-        "beneficiary": ["Sarah Chen", "Mike Torres"],
-        "percentages": [60, 40]
+        "beneficiary": ["employees"],
+        "percentages": [60, 40],
+        "tags": ["founder"]
     },
     "execution":
     {
@@ -166,19 +111,89 @@ Example 3:
     ]
 }
 
-Example 4: 
+### Example 2:
+- Input: "Send 10% of revenue above $50k to our growth fund monthly"
+- Output: 
+{
+    "original": "Send 10% of revenue above $50k to our growth fund monthly.",
+    "memo": "Send 10% of monthly revenue above $50,000 to the growth fund at 00:00 AM UTC on the 1st of each month.",
+    "payment": 
+    {
+        "action": "calculation",
+        "amount":
+        {
+            "source": "treasury.revenue",
+            "formula": "* 0.1"
+        },
+        "source": "sales-revenue",
+        "currency": "USDC",
+        "beneficiary": ["growth-fund"]
+    },
+    "execution":
+    {
+        "cron": "0 0 1 * *",
+        "timing": "schedule"
+    },
+    "conditions":
+    [
+        {
+            "source": "treasury",     
+            "field": "revenue",
+            "operator": ">",
+            "value": 50000,
+            "description": "Monthly revenue must be above $50,000"
+        }
+    ]
+}
+
+### Example 3: 
+- Input: "Pay our contractors every Friday if their invoice is approved"
+- Output: 
+{
+    "original": "Pay our contractors every Friday if their invoice is approved.",
+    "memo": "Pay all approved contractor invoices every Friday at 0:00 AM UTC.",
+    "payment":
+    {
+        "action": "batch",
+        "amount":
+        {
+            "source": "invoices.amount"
+        },
+        "source": "operating-account",
+        "currency": "USDC",
+        "beneficiary": ["contractors"],
+        "tags": ["contractor"]
+    },
+    "execution":
+    {
+        "cron": "0 0 * * 5",
+        "timing": "schedule"
+    },
+    "conditions":
+    [
+        {
+            "source": "invoices",
+            "field": "status",
+            "operator": "==",
+            "value": "approved",
+            "description": "Invoice must be approved"
+        }
+    ]
+}
+
+### Example 4: 
 - Input: "Send $1000 USDC to Mike in 11 hours"
 - Output:
 {
-    "original": "Send $1000 USDC to Mike in 11 hours",
-    "memo": "Send $1000 USDC to Mike in 11 hours from now as a one-time payment.",
+    "original": "Send $1000 USDC to Mike Torres in 11 hours",
+    "memo": "Send $1000 USDC to Mike Torres in 11 hours from now as a one-time payment. Based on the provided context, Mike Torres's wallet address is: 0x2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C.",
     "payment":
     {
         "action": "simple",
         "amount": "1000",
         "source": "operating-account",
         "currency": "USDC",
-        "beneficiary": ["Mike Torres"]
+        "beneficiary": ["0x2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C"]
     },
     "execution":
     {
@@ -188,7 +203,7 @@ Example 4:
     "conditions": []
 }
 
-Example 5: 
+### Example 5: 
 - Input: "Transfer any funds left over from paying our vendors and rent into our reserve fund—unless that brings reserves above 200k, then skip."
 - Output:
 {
@@ -203,7 +218,7 @@ Example 5:
         },
         "source": "operating-account",
         "currency": "USDC",
-        "beneficiary": ["Reserve Fund"]
+        "beneficiary": ["reserve-fund"]
     },
     "execution":
     {
@@ -223,7 +238,19 @@ Example 5:
 }
 
 ${existingRule ? 'PRESERVE all existing field values unless the user specifically requests changes to those fields.' : 'Extract timing information, payment details, conditions, and any other relevant information.'}
-Be precise with amounts, percentages, and conditions.`,
+
+## IMPORTANT PARSING RULES:
+1. For phrases like "X% of revenue above $Y", interpret as:
+   - Amount: X% of total revenue (formula: "* 0.X")  
+   - Condition: revenue > Y
+   - NOT as X% of (revenue - Y)
+
+2. For phrases like "X above Y", create separate condition and calculation:
+   - Calculation uses the full source value
+   - Condition checks if source > threshold
+
+3. Always separate conditional logic from calculation logic.
+`,
         schema: treasuryRuleSchema,
       });
 

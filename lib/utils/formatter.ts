@@ -15,14 +15,29 @@ export function formatAmount(amount: string | object): string {
   }
 
   if (typeof amount === 'object' && amount !== null) {
-    const amountObj = amount as { type: string; value: string | number };
+    const amountObj = amount as any;
+    
+    // Handle new dynamic amount structure with source/formula
+    if (amountObj.source) {
+      if (amountObj.formula) {
+        return `${amountObj.source} ${amountObj.formula}`;
+      }
+      return `${amountObj.source}`;
+    }
+    
+    // Handle legacy amount structures
     if (amountObj.type === 'percentage') {
       return `${amountObj.value}% of source balance`;
     }
     if (amountObj.type === 'calculation') {
       return `Calculated: ${amountObj.value}`;
     }
-    return `${amountObj.value}`;
+    if (amountObj.value !== undefined) {
+      return `${amountObj.value}`;
+    }
+    
+    // Fallback for unknown object structures
+    return JSON.stringify(amountObj);
   }
 
   return String(amount);

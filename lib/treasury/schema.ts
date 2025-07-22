@@ -21,16 +21,32 @@ export const executionSchema = z
         );
         return isValidTimestamp;
       }
-      if (data.timing === 'schedule' && !data.cron) {
-        return false;
-      }
-      if (data.timing === 'hook' && (!data.hooks || data.hooks.length === 0)) {
-        return false;
+      return true;
+    },
+    {
+      message: 'Once timing requires a valid future timestamp in the "at" field',
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.timing === 'schedule') {
+        return data.cron && data.cron.length > 0;
       }
       return true;
     },
     {
-      message: 'Required fields missing for timing type',
+      message: 'Schedule timing requires a valid cron expression in the "cron" field',
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.timing === 'hook') {
+        return data.hooks && data.hooks.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Hook timing requires at least one hook in the "hooks" array',
     },
   );
 
@@ -44,12 +60,13 @@ export const amountSchema = z.union([
 
 export const paymentSchema = z
   .object({
-    action: z.enum(['simple', 'split', 'calculation', 'leftover']),
+    action: z.enum(['simple', 'split', 'calculation', 'leftover', 'batch']),
     source: z.string().min(1, 'Payment source is required'),
     beneficiary: z.array(z.string()).min(1),
     amount: amountSchema,
     currency: z.string(),
     percentages: z.array(z.number()).optional(),
+    tags: z.array(z.string()).optional(),
   })
   .refine(
     (data) => {
@@ -68,6 +85,18 @@ export const paymentSchema = z
     {
       message:
         'Split payments require percentages that sum to 100 and match beneficiary count',
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.action === 'batch') {
+        return data.tags && data.tags.length > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        'Batch payments require at least one tag for filtering',
     },
   );
 
