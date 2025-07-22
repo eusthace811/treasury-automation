@@ -86,7 +86,7 @@ export async function simulateRule(
         ...(beneficiariesData?.employees || []),
         ...(beneficiariesData?.contractors || []),
       ],
-      treasury: treasuryData.treasury,
+      treasury: treasuryData,
       invoices: invoicesData?.invoices || [],
     };
 
@@ -419,7 +419,7 @@ async function evaluateCondition(
     // Find source data and add to collections
     switch (condition.source) {
       case 'treasury':
-        sourceData = context.treasury;
+        sourceData = context.treasury.treasury;
         break;
       case 'accounts':
         // When checking account conditions, filter to the specific account used in payment

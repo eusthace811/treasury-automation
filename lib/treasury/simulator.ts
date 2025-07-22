@@ -349,7 +349,7 @@ export class TreasurySimulator {
           );
         } else {
           ruleData.payment.beneficiary.forEach((beneficiaryId, index) => {
-            const percentage = ruleData.payment.percentages![index];
+            const percentage = ruleData.payment.percentages?.[index] ?? 0;
             const amount = (totalAmount * percentage) / 100;
             result.payments.push({
               beneficiaryId,
@@ -361,11 +361,16 @@ export class TreasurySimulator {
 
       case 'calculation':
       case 'leftover':
-        const equalAmount = totalAmount / ruleData.payment.beneficiary.length;
+        {
+          const equalAmount = totalAmount / ruleData.payment.beneficiary.length;
+        }
         ruleData.payment.beneficiary.forEach((beneficiaryId) => {
           result.payments.push({
             beneficiaryId,
-            amount: Math.round(equalAmount * 100) / 100,
+            amount:
+              Math.round(
+                (totalAmount / ruleData.payment.beneficiary.length) * 100,
+              ) / 100,
           });
         });
         break;
