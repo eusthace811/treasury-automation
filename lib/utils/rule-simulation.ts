@@ -459,9 +459,7 @@ async function evaluateCondition(
           Array.isArray(paymentData.tags)
         ) {
           sourceData = context.invoices.filter((invoice) =>
-            paymentData.tags.some(
-              (tag: string) => invoice.tags?.includes(tag),
-            ),
+            paymentData.tags.some((tag: string) => invoice.tags?.includes(tag)),
           );
 
           result.description = `${condition.description || `${condition.source}.${condition.field} ${condition.operator} ${condition.value}`} (filtered by tags: ${paymentData.tags.join(', ')})`;
@@ -792,7 +790,7 @@ function calculatePayments(
         const taggedInvoices = context.invoices.filter(
           (invoice) =>
             invoice.status === 'approved' &&
-            payment.tags.some((tag) => invoice.tags.includes(tag)),
+            payment.tags.some((tag: string) => invoice.tags.includes(tag)),
         );
 
         if (taggedInvoices.length === 0) {
