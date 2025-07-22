@@ -5,7 +5,10 @@ import {
   treasuryData,
   invoicesData,
 } from '@/data/mockup';
-import { treasuryContextResolver, type AmountResolutionContext } from '@/lib/treasury/context-resolver';
+import {
+  treasuryContextResolver,
+  type AmountResolutionContext,
+} from '@/lib/treasury/context-resolver';
 import { safeFormulaEvaluator } from '@/lib/treasury/formula-evaluator';
 
 interface SimulationResult {
@@ -116,7 +119,7 @@ export async function simulateRule(
         (account.name === ruleData.payment.source ||
           account.id === ruleData.payment.source ||
           account.slug === ruleData.payment.source ||
-          account.address === ruleData.payment.source),
+          account.walletAddress === ruleData.payment.source),
     );
 
     if (!sourceAccount) {
@@ -129,7 +132,7 @@ export async function simulateRule(
     // For batch payments, skip traditional beneficiary resolution
     // as we'll resolve directly from invoices using tags
     let beneficiaries: Array<{ id: string; data: any }> = [];
-    
+
     if (ruleData.payment.action !== 'batch') {
       // Resolve beneficiaries (can be collections, individuals, or addresses)
       beneficiaries = resolveBeneficiaries(
@@ -223,17 +226,20 @@ function resolveBeneficiaries(
 
       // Apply tag filtering if payment has tags
       if (paymentTags && paymentTags.length > 0) {
-        contractors = contractors.filter(contractor => 
-          contractor.tags && paymentTags.some((tag: string) => contractor.tags.includes(tag))
+        contractors = contractors.filter(
+          (contractor) =>
+            contractor.tags &&
+            paymentTags.some((tag: string) => contractor.tags.includes(tag)),
         );
       }
 
       // Add to collections for display
       result.collections.push({
         name: 'contractors',
-        type: paymentTags && paymentTags.length > 0 
-          ? `Contractors (filtered by ${paymentTags.join(', ')} tags)`
-          : 'Contractors',
+        type:
+          paymentTags && paymentTags.length > 0
+            ? `Contractors (filtered by ${paymentTags.join(', ')} tags)`
+            : 'Contractors',
         items: contractors.map((contractor) => ({
           id: contractor.id,
           name: contractor.name,
@@ -258,17 +264,20 @@ function resolveBeneficiaries(
 
       // Apply tag filtering if payment has tags
       if (paymentTags && paymentTags.length > 0) {
-        employees = employees.filter(employee => 
-          employee.tags && paymentTags.some((tag: string) => employee.tags.includes(tag))
+        employees = employees.filter(
+          (employee) =>
+            employee.tags &&
+            paymentTags.some((tag: string) => employee.tags.includes(tag)),
         );
       }
 
       // Add to collections for display
       result.collections.push({
         name: 'employees',
-        type: paymentTags && paymentTags.length > 0 
-          ? `Employees (filtered by ${paymentTags.join(', ')} tags)`
-          : 'Employees',
+        type:
+          paymentTags && paymentTags.length > 0
+            ? `Employees (filtered by ${paymentTags.join(', ')} tags)`
+            : 'Employees',
         items: employees.map((employee) => ({
           id: employee.id,
           name: employee.name,
@@ -369,12 +378,12 @@ function resolveBeneficiaries(
       );
 
       if (account) {
-        resolvedBeneficiaries.push({ 
-          id: account.id, 
+        resolvedBeneficiaries.push({
+          id: account.id,
           data: {
             ...account,
             type: 'account',
-          }
+          },
         });
       } else if (beneficiaryId.startsWith('0x')) {
         // Check if it's a wallet address without matching beneficiary
@@ -430,7 +439,7 @@ async function evaluateCondition(
               (account.name === paymentData.source ||
                 account.id === paymentData.source ||
                 account.slug === paymentData.source ||
-                account.address === paymentData.source),
+                account.walletAddress === paymentData.source),
           );
           sourceData = targetAccount || context.accounts;
         } else {
@@ -442,23 +451,30 @@ async function evaluateCondition(
         break;
       case 'invoices':
         sourceData = context.invoices;
-        
+
         // Apply tag filtering if payment is batch with tags
-        if (paymentData?.action === 'batch' && paymentData?.tags && Array.isArray(paymentData.tags)) {
-          sourceData = context.invoices.filter(invoice => 
-            paymentData.tags.some((tag: string) => invoice.tags && invoice.tags.includes(tag))
+        if (
+          paymentData?.action === 'batch' &&
+          paymentData?.tags &&
+          Array.isArray(paymentData.tags)
+        ) {
+          sourceData = context.invoices.filter((invoice) =>
+            paymentData.tags.some(
+              (tag: string) => invoice.tags?.includes(tag),
+            ),
           );
-          
+
           result.description = `${condition.description || `${condition.source}.${condition.field} ${condition.operator} ${condition.value}`} (filtered by tags: ${paymentData.tags.join(', ')})`;
         }
-        
+
         // Add invoices collection for condition evaluation
         simulationResult.collections.push({
           name: 'invoices_for_condition',
-          type: paymentData?.action === 'batch' && paymentData?.tags 
-            ? `Invoices (filtered by ${paymentData.tags.join('/')} tags)`
-            : 'Invoices (for condition check)',
-          items: sourceData.map((invoice) => ({
+          type:
+            paymentData?.action === 'batch' && paymentData?.tags
+              ? `Invoices (filtered by ${paymentData.tags.join('/')} tags)`
+              : 'Invoices (for condition check)',
+          items: sourceData.map((invoice: any) => ({
             id: invoice.id,
             name: `${invoice.vendorName} - ${invoice.description}`,
             details: {
@@ -640,7 +656,7 @@ async function evaluateCondition(
         // Extract just the field name after the dot (e.g., "operating-account.balance" -> "balance")
         fieldPath = fieldPath.split('.').pop() || fieldPath;
       }
-      
+
       fieldValue = getNestedValue(sourceData, fieldPath);
       result.value = `${sourceData.vendorName || sourceData.name || 'Item'}: ${fieldValue}`;
 
@@ -731,7 +747,9 @@ function calculatePayments(
 
   try {
     // Check if this is an invoice payment - if so, use individual invoice amounts
-    const invoiceBeneficiaries = beneficiaries.filter(b => b.data && b.data.invoiceAmount);
+    const invoiceBeneficiaries = beneficiaries.filter(
+      (b) => b.data?.invoiceAmount,
+    );
     let totalAmount = 0;
 
     // Skip total amount validation for batch payments as they calculate amounts per invoice
@@ -739,14 +757,21 @@ function calculatePayments(
       totalAmount = 1; // Set to valid value to pass validation
     } else if (invoiceBeneficiaries.length > 0) {
       // For invoice payments, use the sum of individual invoice amounts
-      totalAmount = invoiceBeneficiaries.reduce((sum, b) => sum + (b.data.invoiceAmount || 0), 0);
+      totalAmount = invoiceBeneficiaries.reduce(
+        (sum, b) => sum + (b.data.invoiceAmount || 0),
+        0,
+      );
     } else {
       // Calculate base amount for non-invoice payments
       if (typeof payment.amount === 'string') {
         totalAmount = Number.parseFloat(payment.amount);
       } else if (typeof payment.amount === 'object') {
         // Handle dynamic amounts (calculations)
-        totalAmount = calculateDynamicAmount(payment.amount, sourceAccount, context);
+        totalAmount = calculateDynamicAmount(
+          payment.amount,
+          sourceAccount,
+          context,
+        );
       }
     }
     if (Number.isNaN(totalAmount) || totalAmount <= 0) {
@@ -756,7 +781,7 @@ function calculatePayments(
 
     // Create payment based on action type
     switch (payment.action) {
-      case 'batch':
+      case 'batch': {
         // Batch payments use tag-based filtering for deterministic results
         if (!payment.tags || payment.tags.length === 0) {
           result.error = 'Batch payments require tags for filtering';
@@ -764,9 +789,10 @@ function calculatePayments(
         }
 
         // Filter approved invoices by tags
-        const taggedInvoices = context.invoices.filter(invoice => 
-          invoice.status === 'approved' && 
-          payment.tags.some(tag => invoice.tags.includes(tag))
+        const taggedInvoices = context.invoices.filter(
+          (invoice) =>
+            invoice.status === 'approved' &&
+            payment.tags.some((tag) => invoice.tags.includes(tag)),
         );
 
         if (taggedInvoices.length === 0) {
@@ -778,7 +804,7 @@ function calculatePayments(
         result.collections.push({
           name: `batch_${payment.tags.join('_')}_invoices`,
           type: `Batch ${payment.tags.join('/')} Invoices`,
-          items: taggedInvoices.map(invoice => ({
+          items: taggedInvoices.map((invoice) => ({
             id: invoice.id,
             name: `${invoice.vendorName} - ${invoice.description}`,
             details: {
@@ -793,12 +819,14 @@ function calculatePayments(
           })),
         });
 
-        const batchToDetails = taggedInvoices.map(invoice => {
+        const batchToDetails = taggedInvoices.map((invoice) => {
           // Find the actual beneficiary (contractor/employee) for this invoice
-          const beneficiary = context.beneficiaries.find(b => 
-            b.name === invoice.vendorName || b.walletAddress === invoice.vendorAddress
+          const beneficiary = context.beneficiaries.find(
+            (b) =>
+              b.name === invoice.vendorName ||
+              b.walletAddress === invoice.vendorAddress,
           );
-          
+
           // Calculate payment amount - apply formula if specified
           let paymentAmount = invoice.amount;
           if (typeof payment.amount === 'object' && payment.amount.formula) {
@@ -806,17 +834,23 @@ function calculatePayments(
             const resolutionContext = { account: sourceAccount, invoice };
             try {
               const evaluatedAmount = safeFormulaEvaluator.evaluate(
-                payment.amount.formula.replace('invoices.amount', invoice.amount.toString()),
-                invoice.amount
+                payment.amount.formula.replace(
+                  'invoices.amount',
+                  invoice.amount.toString(),
+                ),
+                invoice.amount,
               );
               if (evaluatedAmount !== null && evaluatedAmount > 0) {
                 paymentAmount = evaluatedAmount;
               }
             } catch (error) {
-              console.warn(`Failed to evaluate formula for invoice ${invoice.id}:`, error);
+              console.warn(
+                `Failed to evaluate formula for invoice ${invoice.id}:`,
+                error,
+              );
             }
           }
-          
+
           return {
             id: invoice.id,
             name: invoice.vendorName,
@@ -832,7 +866,10 @@ function calculatePayments(
           };
         });
 
-        const batchTotal = batchToDetails.reduce((sum, detail) => sum + detail.amount, 0);
+        const batchTotal = batchToDetails.reduce(
+          (sum, detail) => sum + detail.amount,
+          0,
+        );
 
         result.payments.push({
           from: sourceAccount.name,
@@ -842,7 +879,7 @@ function calculatePayments(
             balance: sourceAccount.balance,
             balanceAfter: sourceAccount.balance - batchTotal,
           },
-          to: batchToDetails.map(detail => detail.id),
+          to: batchToDetails.map((detail) => detail.id),
           toDetails: batchToDetails,
           amount: batchTotal.toLocaleString(),
           currency: payment.currency,
@@ -854,22 +891,33 @@ function calculatePayments(
           },
         });
         break;
+      }
 
-      case 'simple':
+      case 'simple': {
         // For invoice payments, create detailed breakdown by checking actual resolved beneficiaries
-        const invoiceBeneficiaries = beneficiaries.filter(b => b.data && b.data.invoiceAmount);
-        
+        const invoiceBeneficiaries = beneficiaries.filter(
+          (b) => b.data?.invoiceAmount,
+        );
+
         if (invoiceBeneficiaries.length > 0) {
           // This is an invoice payment - create detailed breakdown
-          const toDetails = invoiceBeneficiaries.map(beneficiary => ({
+          const toDetails = invoiceBeneficiaries.map((beneficiary) => ({
             id: beneficiary.id,
-            name: beneficiary.data.name || beneficiary.data.vendorName || beneficiary.id,
+            name:
+              beneficiary.data.name ||
+              beneficiary.data.vendorName ||
+              beneficiary.id,
             type: 'invoice' as const,
             amount: beneficiary.data.invoiceAmount,
-            description: beneficiary.data.description || `Payment to ${beneficiary.data.name || beneficiary.data.vendorName}`,
+            description:
+              beneficiary.data.description ||
+              `Payment to ${beneficiary.data.name || beneficiary.data.vendorName}`,
           }));
 
-          const actualTotal = toDetails.reduce((sum, detail) => sum + detail.amount, 0);
+          const actualTotal = toDetails.reduce(
+            (sum, detail) => sum + detail.amount,
+            0,
+          );
 
           result.payments.push({
             from: sourceAccount.name,
@@ -879,7 +927,7 @@ function calculatePayments(
               balance: sourceAccount.balance,
               balanceAfter: sourceAccount.balance - actualTotal,
             },
-            to: toDetails.map(detail => detail.id),
+            to: toDetails.map((detail) => detail.id),
             toDetails,
             amount: actualTotal.toLocaleString(),
             currency: payment.currency,
@@ -892,13 +940,17 @@ function calculatePayments(
           });
         } else {
           // Default behavior for other beneficiaries
-          const toDetails = beneficiaries.map(beneficiary => {
+          const toDetails = beneficiaries.map((beneficiary) => {
             // Determine type based on data structure
-            let type: 'invoice' | 'employee' | 'contractor' | 'account' = 'contractor';
-            
+            let type: 'invoice' | 'employee' | 'contractor' | 'account' =
+              'contractor';
+
             if (beneficiary.data?.type) {
               type = beneficiary.data.type;
-            } else if (beneficiary.data?.salary && beneficiary.data?.department) {
+            } else if (
+              beneficiary.data?.salary &&
+              beneficiary.data?.department
+            ) {
               // Has salary and department = employee
               type = 'employee';
             } else if (beneficiary.data?.hourlyRate) {
@@ -911,7 +963,10 @@ function calculatePayments(
 
             return {
               id: beneficiary.id,
-              name: beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id,
+              name:
+                beneficiary.data?.name ||
+                beneficiary.data?.vendorName ||
+                beneficiary.id,
               type,
               amount: totalAmount / beneficiaries.length,
               description: `Payment to ${beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id}`,
@@ -945,8 +1000,9 @@ function calculatePayments(
           });
         }
         break;
+      }
 
-      case 'split':
+      case 'split': {
         if (
           !payment.percentages ||
           payment.percentages.length !== beneficiaries.length
@@ -958,9 +1014,10 @@ function calculatePayments(
 
         const splitToDetails = beneficiaries.map((beneficiary, index) => {
           const splitAmount = (totalAmount * payment.percentages[index]) / 100;
-          
+
           // Determine beneficiary type
-          let type: 'invoice' | 'employee' | 'contractor' | 'account' = 'contractor';
+          let type: 'invoice' | 'employee' | 'contractor' | 'account' =
+            'contractor';
           if (beneficiary.data?.type) {
             type = beneficiary.data.type;
           } else if (beneficiary.data?.salary && beneficiary.data?.department) {
@@ -973,7 +1030,10 @@ function calculatePayments(
 
           return {
             id: beneficiary.id,
-            name: beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id,
+            name:
+              beneficiary.data?.name ||
+              beneficiary.data?.vendorName ||
+              beneficiary.id,
             type,
             amount: splitAmount,
             description: `${payment.percentages[index]}% split payment to ${beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id}`,
@@ -1006,14 +1066,16 @@ function calculatePayments(
           },
         });
         break;
+      }
 
-      case 'calculation':
+      case 'calculation': {
         const calculationToDetails = beneficiaries.map((beneficiary) => {
           // For calculation actions, use the pre-calculated totalAmount
           const calculatedAmount = totalAmount;
-          
+
           // Determine beneficiary type
-          let type: 'invoice' | 'employee' | 'contractor' | 'account' = 'contractor';
+          let type: 'invoice' | 'employee' | 'contractor' | 'account' =
+            'contractor';
           if (beneficiary.data?.type) {
             type = beneficiary.data.type;
           } else if (beneficiary.data?.salary && beneficiary.data?.department) {
@@ -1026,7 +1088,10 @@ function calculatePayments(
 
           return {
             id: beneficiary.id,
-            name: beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id,
+            name:
+              beneficiary.data?.name ||
+              beneficiary.data?.vendorName ||
+              beneficiary.id,
             type,
             amount: calculatedAmount,
             description: `Calculated payment to ${beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id}`,
@@ -1039,7 +1104,10 @@ function calculatePayments(
           };
         });
 
-        const calculationTotal = calculationToDetails.reduce((sum, detail) => sum + detail.amount, 0);
+        const calculationTotal = calculationToDetails.reduce(
+          (sum, detail) => sum + detail.amount,
+          0,
+        );
 
         result.payments.push({
           from: sourceAccount.name,
@@ -1061,6 +1129,7 @@ function calculatePayments(
           },
         });
         break;
+      }
 
       case 'leftover': {
         // Calculate leftover amount after other operations
@@ -1071,7 +1140,8 @@ function calculatePayments(
 
         const leftoverToDetails = beneficiaries.map((beneficiary) => {
           // Determine beneficiary type
-          let type: 'invoice' | 'employee' | 'contractor' | 'account' = 'contractor';
+          let type: 'invoice' | 'employee' | 'contractor' | 'account' =
+            'contractor';
           if (beneficiary.data?.type) {
             type = beneficiary.data.type;
           } else if (beneficiary.data?.salary && beneficiary.data?.department) {
@@ -1087,7 +1157,10 @@ function calculatePayments(
 
           return {
             id: beneficiary.id,
-            name: beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id,
+            name:
+              beneficiary.data?.name ||
+              beneficiary.data?.vendorName ||
+              beneficiary.id,
             type,
             amount: shareAmount,
             description: `Leftover funds transfer to ${beneficiary.data?.name || beneficiary.data?.vendorName || beneficiary.id}`,
@@ -1116,7 +1189,7 @@ function calculatePayments(
           breakdown: {
             totalAmount: leftoverAmount,
             itemCount: beneficiaries.length,
-            description: `Leftover funds (after ${(100 - (leftoverAmount / sourceAccount.balance * 100)).toFixed(1)}% reserve) to ${beneficiaries.length} recipients`,
+            description: `Leftover funds (after ${(100 - (leftoverAmount / sourceAccount.balance) * 100).toFixed(1)}% reserve) to ${beneficiaries.length} recipients`,
           },
         });
         break;
@@ -1132,37 +1205,46 @@ function calculatePayments(
   return result;
 }
 
-function calculateDynamicAmount(amountConfig: any, sourceAccount: any, context?: SimulationContext): number {
-  
+function calculateDynamicAmount(
+  amountConfig: any,
+  sourceAccount: any,
+  context?: SimulationContext,
+): number {
   // Handle new source + formula structure
   if (typeof amountConfig === 'object' && 'source' in amountConfig) {
     const { source, formula } = amountConfig;
-    
+
     // Build context for resolution (include source account for reference)
     const resolutionContext: AmountResolutionContext = {
       account: sourceAccount,
     };
-    
+
     // Resolve the source value
-    const sourceValue = treasuryContextResolver.resolve(source, resolutionContext);
+    const sourceValue = treasuryContextResolver.resolve(
+      source,
+      resolutionContext,
+    );
     if (sourceValue === null) {
       console.warn(`Failed to resolve dynamic amount source: ${source}`);
       return 0;
     }
-    
+
     // Apply formula if provided
     if (formula) {
-      const evaluatedAmount = safeFormulaEvaluator.evaluate(formula, sourceValue);
+      const evaluatedAmount = safeFormulaEvaluator.evaluate(
+        formula,
+        sourceValue,
+      );
       if (evaluatedAmount === null) {
         console.warn(`Failed to evaluate dynamic amount formula: ${formula}`);
         return 0;
       }
       return evaluatedAmount;
     }
-    
+
     return sourceValue;
   }
-  
+
   return Number.parseFloat(amountConfig.value) || 0;
 }
 

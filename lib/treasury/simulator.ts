@@ -5,7 +5,7 @@ import {
   type Employee,
   type Contractor,
 } from '@/data/mockup/beneficiaries';
-import { transactionsData, type Transaction } from '@/data/mockup/transactions';
+import { transactionsData, } from '@/data/mockup/transactions';
 import { treasuryData } from '@/data/mockup/treasury';
 import {
   treasuryContextResolver,

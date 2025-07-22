@@ -9,22 +9,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import {
-  CheckCircleFillIcon,
-  GlobeIcon,
-  LockIcon,
   MoreHorizontalIcon,
   PencilEditIcon,
-  ShareIcon,
   TrashIcon,
 } from './icons';
-import { memo } from 'react';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 
 const PureChatItem = ({

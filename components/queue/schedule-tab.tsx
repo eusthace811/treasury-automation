@@ -14,7 +14,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cronToHuman } from '@/lib/utils/cron';
 import {
   RefreshCw,
-  Clock,
   CheckCircle,
   Circle,
   ChevronDown,
@@ -222,15 +221,14 @@ export function ScheduleTab({
           {filteredSchedules.map((schedule, index) => {
             const scheduleStatus = 'active'; // Assume active for now
             const isBodyExpanded = expandedBodies.has(schedule.scheduleId);
-            const formattedBody = schedule.body ? formatBody(schedule.body) : '';
+            const formattedBody = schedule.body
+              ? formatBody(schedule.body)
+              : '';
             const shouldShowToggle = formattedBody.length > 150;
 
             return (
               <Card
-                key={`${schedule.scheduleId}-${
-                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                  index
-                }`}
+                key={`${schedule.scheduleId}-${index}`}
                 className="border-l-4 border-l-purple-500"
               >
                 <CardHeader className="pb-3">
@@ -292,7 +290,9 @@ export function ScheduleTab({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleBodyExpansion(schedule.scheduleId)}
+                            onClick={() =>
+                              toggleBodyExpansion(schedule.scheduleId)
+                            }
                             className="h-6 px-2 text-xs"
                           >
                             {isBodyExpanded ? (
