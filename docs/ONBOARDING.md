@@ -15,7 +15,6 @@ cd treasury-automation
 
 ```bash
 cp .env.example .env.local
-openssl rand -base64 32
 ```
 
 To generate a random secret for AUTH_SECRET, run:

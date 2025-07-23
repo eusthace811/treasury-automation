@@ -1,5 +1,5 @@
-<a href="https://chat.vercel.ai/">
-  <img alt="Next.js 14 and App Router-ready AI chatbot." src="app/(chat)/opengraph-image.png">
+<a href="https://treasury-automation-two.vercel.app">
+  <img alt="Treasury Automation Challenge." src="app/(chat)/opengraph-image.png">
   <h1 align="center">Treasury Automation Challenge</h1>
 </a>
 
@@ -14,6 +14,12 @@
   <a href="#running-locally"><strong>Running locally</strong></a>
 </p>
 <br/>
+
+## 📌 What You Need to Know
+
+1. [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+2. [ONBOARDING.md](./docs/ONBOARDING.md)
+3. [HANDOFF.md](./docs/HANDOFF.md)
 
 ## Features
 
