@@ -169,6 +169,39 @@ Simulation outputs a detailed result — like a dry run — and is used in the U
 
 ---
 
+### ⚙️ System Assumptions
+
+To ensure clarity, stability, and safe operation, the following assumptions underpin this treasury automation system:
+
+1. **Single Treasury Scope**
+   This system is designed for a **single treasury environment**. Multi-tenant or multi-organization support is not currently implemented.
+
+2. **Pre-Classified Financial Context**
+   We assume the finance team has **already structured and classified** the organization’s financial context, including:
+
+   * Adding all beneficiaries (employees, contractors, vendors)
+   * Properly tagging collections for targeting in rules
+
+   > *Note: This is a strong candidate for automation using an AI-based classifier.*
+
+3. **Structured Business Context**
+   The system relies on clearly defined contextual data across five domains:
+
+   * **Company Overview**: Treasury snapshots, financial health
+   * **Accounts**: Wallets, balances, and funding purposes
+   * **Team**: Employees, contractors, and roles
+   * **Invoices**: Approval status, vendors, due dates
+   * **Transactions**: Recent payment activity and patterns
+
+4. **Payments Are Deterministic**
+   Payments are **not abstract predictions**. They are **concrete, irreversible financial commitments**. To uphold this, the system emphasizes:
+
+   * Rigorous validation and simulation before execution
+   * Strict assumptions around context accuracy
+   * The need for future **security hardening**, particularly around the AI agent's autonomy and decision-making
+
+---
+
 ### Chat-as-Rule-Storage
 
 * Rules are embedded in the `chats` table as `ruleData` (JSONB)
