@@ -348,7 +348,7 @@ export class TreasurySimulator {
             'Split payment requires percentages for each beneficiary',
           );
         } else {
-          ruleData.payment.beneficiary.forEach((beneficiaryId, index) => {
+          ruleData.payment.beneficiary.forEach((beneficiaryId: any, index: any) => {
             const percentage = ruleData.payment.percentages?.[index] ?? 0;
             const amount = (totalAmount * percentage) / 100;
             result.payments.push({
@@ -364,7 +364,7 @@ export class TreasurySimulator {
         {
           const equalAmount = totalAmount / ruleData.payment.beneficiary.length;
         }
-        ruleData.payment.beneficiary.forEach((beneficiaryId) => {
+        ruleData.payment.beneficiary.forEach((beneficiaryId: any) => {
           result.payments.push({
             beneficiaryId,
             amount:

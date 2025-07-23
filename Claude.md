@@ -15,63 +15,99 @@
 ## Technical Architecture
 
 ### Framework & Core Technologies
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **UI Library**: React 19 (RC)
+- **Framework**: Next.js 15 with App Router (15.3.0-canary.31)
+- **Language**: TypeScript (^5.6.3)
+- **UI Library**: React 19 RC (19.0.0-rc-45804af1-20241021)
 - **Styling**: Tailwind CSS + shadcn/ui components
-- **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: NextAuth.js v5 (beta)
-- **AI Integration**: Vercel AI SDK v5 (beta)
+- **Database**: PostgreSQL with Drizzle ORM (^0.34.0)
+- **Authentication**: NextAuth.js v5 (5.0.0-beta.25)
+- **AI Integration**: Vercel AI SDK v5 (5.0.0-beta.21)
+- **Next.js Features**: PPR (Partial Pre-rendering) enabled, server external packages optimization
 
 ### AI & Model Providers
-- **Default Provider**: OpenAI (configurable via API_KEY_PROVIDER)
+- **Default Provider**: openai (configurable via API_KEY_PROVIDER)
 - **Supported Providers**: 
-  - OpenAI
-  - xAI  
-  - Anthropic
-  - DeepSeek
+  - OpenAI (@ai-sdk/openai: 2.0.0-beta.9)
+  - xAI (@ai-sdk/xai: 2.0.0-beta.8)
+  - Anthropic (@ai-sdk/anthropic: 2.0.0-beta.6)
+  - DeepSeek (@ai-sdk/deepseek: 1.0.0-beta.6)
 - **Model Types**:
   - `chat-model`: Primary model for all-purpose chat
-  - `chat-model-reasoning`: Advanced reasoning model
+  - `chat-model-reasoning`: Advanced reasoning model (currently not being used)
 
 ### Data Storage & Integration
-- **Database**: PostgreSQL with Drizzle ORM
-- **File Storage**: Vercel Blob
-- **Caching**: Redis (optional)
+- **Database**: PostgreSQL with Drizzle ORM and automated migrations
+- **File Storage**: Vercel Blob (@vercel/blob: ^0.24.1)
+- **Caching**: Redis (^5.0.0) optional
 - **Session Management**: NextAuth.js with database sessions
-- **Queue System**: QStash for rule scheduling and execution
+- **Queue System**: QStash (@upstash/qstash: ^2.8.1) for rule scheduling and execution
+- **Observability**: OpenTelemetry integration with Vercel OTel, LMNR tracing (Laminar, https://www.lmnr.ai/)
 
 ## Project Structure
 
 ### Key Directories
 ```
 app/
-├── (auth)/          # Authentication routes and logic
-├── (chat)/          # Main chat interface and API
-│   ├── api/qstash/  # QStash webhook endpoints
-│   └── queue/       # Queue management interface
-└── layout.tsx       # Root layout with metadata
+├── (auth)/               # Authentication routes and logic
+│   ├── api/auth/        # NextAuth.js API routes
+│   ├── login/           # Login page
+│   └── register/        # Registration page
+├── (chat)/              # Main chat interface and API
+│   ├── api/             # Chat and treasury API endpoints
+│   │   ├── chat/        # Chat streaming and data APIs
+│   │   ├── qstash/      # QStash webhook endpoints (logs, schedules)
+│   │   ├── queue/       # Queue management API
+│   │   ├── document/    # Artifact document management
+│   │   └── files/       # File upload handling
+│   ├── chat/[id]/       # Dynamic chat pages
+│   └── queue/           # Queue management interface
+├── api/rule/            # Treasury rule validation and simulation
+└── layout.tsx           # Root layout with metadata
 
 components/
-├── ui/              # shadcn/ui base components
-├── queue/           # Queue management components
-├── chat.tsx         # Main chat component
-├── artifact*.tsx    # Artifact system components
-└── message*.tsx     # Message handling components
+├── ui/                  # shadcn/ui base components (25+ components)
+├── queue/               # Queue management components
+│   ├── schedule-tab.tsx # QStash schedules display
+│   └── queue-tab.tsx    # Execution logs display
+├── chat.tsx             # Main chat component
+├── artifact*.tsx        # Artifact system (6 components)
+├── message*.tsx         # Message handling (4 components)
+├── treasury-rule.tsx    # Treasury rule display component
+├── rule-test-sidebar.tsx # Rule testing interface
+└── [30+ other components] # Full UI component library
 
 lib/
-├── ai/              # AI integration and configuration
-│   ├── providers/   # Model provider configurations
-│   ├── tools/       # AI tools and treasury-specific functions
-│   ├── models.ts    # Model definitions
-│   └── prompts.ts   # System prompts
-├── db/              # Database schema and queries
-├── treasury/        # Treasury-specific schema and types
-├── qstash/          # QStash integration
-└── editor/          # Text editor functionality
+├── ai/                  # AI integration and configuration
+│   ├── providers/       # Model provider configurations (4 providers)
+│   ├── tools/           # AI tools (5 treasury + 5 general tools)
+│   ├── models.ts        # Model definitions
+│   ├── prompts.ts       # System prompts with treasury context
+│   └── entitlements.ts  # AI provider entitlements
+├── db/                  # Database layer
+│   ├── migrations/      # 11 database migrations
+│   ├── schema.ts        # Complete database schema
+│   ├── queries.ts       # Database queries
+│   └── migrate.ts       # Migration runner
+├── treasury/            # Treasury-specific functionality
+│   ├── schema.ts        # Treasury rule schemas (comprehensive)
+│   ├── simulator.ts     # Payment simulation engine
+│   ├── context-resolver.ts # Dynamic context resolution
+│   ├── formula-evaluator.ts # Safe formula evaluation
+│   └── types.ts         # Treasury type definitions
+├── utils/               # Utility functions
+│   ├── rule-simulation.ts # Rule simulation utility
+│   ├── cron.ts          # Cron helper functions
+│   ├── formatter.ts     # Data formatting utilities
+│   └── source-generator.ts # Code generation utilities
+├── qstash/              # QStash integration
+├── editor/              # Rich text editor (ProseMirror)
+└── artifacts/           # Artifact system server logic
 
-data/mockup/         # Treasury mockup data for realistic testing
-artifacts/           # Artifact system (code, text, sheets, images)
+data/mockup/             # Comprehensive treasury mockup data
+artifacts/               # Artifact system client components
+contexts/                # React contexts
+hooks/                   # Custom React hooks (6 hooks)
+tests/                   # Playwright E2E tests
 ```
 
 ### Treasury-Enhanced Database Schema
@@ -98,9 +134,14 @@ Complete end-to-end treasury rule processing:
 - **`rule-parser.ts`**: Converts natural language to structured JSON treasury rules
 - **`rule-evaluator.ts`**: Analyzes rule conflicts (schedule, payment, condition, beneficiary)
 - **`rule-validator.ts`**: Validates rules against schema and business logic
-- **`rule-saver.ts`**: CRUD operations for treasury rules with user isolation
 - **`rule-updater.ts`**: Updates chat records with rule changes and QStash integration
 - **`rule-answer.ts`**: Provides structured responses for rule operations
+
+**General AI Tools** (inherited from template):
+- **`create-document.ts`**: Artifact creation tool
+- **`update-document.ts`**: Artifact modification tool
+- **`request-suggestions.ts`**: Document improvement suggestions
+- **`get-weather.ts`**: Weather data retrieval tool
 
 #### **Treasury Schema & Types** (`lib/treasury/`)
 Comprehensive rule definitions supporting:
@@ -108,7 +149,14 @@ Comprehensive rule definitions supporting:
 - **Payment Actions**: `simple`, `split`, `calculation`, `leftover`, `batch`
 - **Conditional Logic**: Before/after execution conditions [optional]
 - **Amount Handling**: Static amounts and dynamic calculations
-- **Strong TypeScript typing** throughout
+- **Advanced Features**: Policy enforcement, governance compliance, audit trails
+- **Strong TypeScript typing** throughout with Zod validation
+
+#### **Treasury Core Functionality**
+- **Context Resolution**: Dynamic data source resolution (`context-resolver.ts`)
+- **Formula Evaluation**: Safe mathematical expression evaluation (`formula-evaluator.ts`)
+- **Payment Simulation**: Complete payment execution simulation (`simulator.ts`)
+- **Rule Processing**: Advanced rule simulation with balance validation (`rule-simulation.ts`)
 
 ### Queue Management & Scheduling System
 
@@ -165,18 +213,18 @@ Advanced content creation and editing system supporting:
 - **User Isolation**: Treasury rules scoped to individual users
 
 ### AI Tools (Current)
-**Treasury-Specific**:
-- `rule-parser`: Natural language to treasury rule conversion
-- `rule-evaluator`: Rule conflict analysis
-- `rule-validator`: Rule validation and business logic checking
-- `rule-updater`: Rule updates with QStash integration
+**Treasury-Specific** (5 tools):
+- `rule-parser`: Natural language to treasury rule conversion with sophisticated examples
+- `rule-evaluator`: Rule conflict analysis with user isolation and edit-aware checking
+- `rule-validator`: Rule validation with Zod schema + business logic + cron validation
+- `rule-updater`: Rule updates with QStash integration for scheduling
 - `rule-answer`: Structured rule operation responses
 
-**General**: not being used
-- `get-weather`: Weather data retrieval
-- `create-document`: Artifact creation
-- `update-document`: Artifact modification
+**General Artifact Tools** (4 tools):
+- `create-document`: Document/code/sheet/image creation
+- `update-document`: Artifact modification with diff support
 - `request-suggestions`: Document improvement suggestions
+- `get-weather`: Weather data retrieval (demo tool)
 
 ## Development Conventions
 
@@ -188,9 +236,10 @@ Advanced content creation and editing system supporting:
 
 ### Database
 - **ORM**: Drizzle with PostgreSQL
-- **Migrations**: Automated with build process
+- **Migrations**: 11 migrations with automated build process
 - **Schema Versioning**: V2 message schema (current)
-- **Treasury Extensions**: Chat table enhanced with rule fields
+- **Treasury Extensions**: Chat table enhanced with treasury rule fields
+- **Migration History**: From initial schema to chat-rule unification to schedule ID additions
 
 ### Environment Variables
 ```
@@ -211,30 +260,36 @@ QSTASH_NEXT_SIGNING_KEY=****        # QStash webhook verification
 
 ### Scripts
 - `pnpm dev`: Development server with Turbo
-- `pnpm build`: Production build with migrations
-- `pnpm lint`: ESLint + Biome linting
+- `pnpm build`: Production build with automated migrations
+- `pnpm lint`: ESLint + Biome linting with auto-fix
+- `pnpm lint:fix`: Enhanced linting with unsafe fixes
 - `pnpm format`: Biome formatting
-- `pnpm db:*`: Database management commands
-- `pnpm test`: Playwright E2E tests
+- `pnpm db:*`: Complete database management suite (generate, migrate, studio, push, pull, check, up)
+- `pnpm test`: Playwright E2E tests with PLAYWRIGHT=True environment
 
 ## Implementation Status
 
-### ✅ Fully Implemented
-- **Complete rule management system** from parsing to execution
-- **QStash integration** for scheduling and webhooks
-- **Rich mockup data** for realistic treasury context
-- **Queue management interface** with real-time monitoring
-- **Database schema** with treasury extensions
-- **AI-powered rule processing** with conflict detection
-- **TypeScript type safety** throughout treasury components
-- **Professional UI components** for queue management
+### ✅ Fully Implemented & Production-Ready
+- **Complete rule management system** from parsing to execution with advanced conflict detection
+- **QStash integration** for scheduling and webhooks with dual execution modes
+- **Rich mockup data** for realistic treasury context (6 data types, 50+ entities)
+- **Queue management interface** with real-time monitoring and professional UI
+- **Database schema** with treasury extensions (11 migrations, chat-rule unification)
+- **AI-powered rule processing** with sophisticated natural language parsing
+- **TypeScript type safety** throughout treasury components with comprehensive Zod schemas
+- **Professional UI components** for queue management with real-time updates
+- **Advanced simulation engine** with payment processing and treasury impact analysis
+- **Context resolution system** with dynamic data source mapping
+- **Formula evaluation engine** with security-focused mathematical expression processing
 
-### ✅ Core Infrastructure
-- **Multi-model AI support** (OpenAI, xAI, Anthropic, DeepSeek)
-- **Artifact system** for document creation
-- **Authentication system** with user isolation
-- **Real-time streaming** AI responses
-- **Comprehensive testing** with Playwright
+### ✅ Core Infrastructure (Template-Based)
+- **Multi-model AI support** (OpenAI, xAI, Anthropic, DeepSeek) with provider-specific configurations
+- **Comprehensive artifact system** for document/code/sheet/image creation and editing
+- **Authentication system** with user isolation and guest mode support
+- **Real-time streaming** AI responses with resumable streams
+- **Comprehensive testing** with Playwright E2E tests
+- **Modern UI/UX** with 25+ shadcn/ui components and responsive design
+- **Observability** with OpenTelemetry and LMNR tracing integration
 
 ### ❌ Not Yet Implemented
 - **Actual payment processor integration**
@@ -272,49 +327,122 @@ QSTASH_NEXT_SIGNING_KEY=****        # QStash webhook verification
 
 ## Dependencies & Versions
 
-### Key Dependencies
-- `next`: 15.3.0-canary.31
-- `ai`: 5.0.0-beta.21
+### Core Framework
+- `next`: 15.3.0-canary.31 (with PPR enabled)
 - `react`: 19.0.0-rc-45804af1-20241021
-- `next-auth`: 5.0.0-beta.25
+- `typescript`: ^5.6.3
+
+### AI & ML
+- `ai`: 5.0.0-beta.21 (Vercel AI SDK)
+- `@ai-sdk/openai`: 2.0.0-beta.9
+- `@ai-sdk/xai`: 2.0.0-beta.8  
+- `@ai-sdk/anthropic`: 2.0.0-beta.6
+- `@ai-sdk/deepseek`: 1.0.0-beta.6
+- `@ai-sdk/react`: 2.0.0-beta.6
+
+### Database & Storage
 - `drizzle-orm`: ^0.34.0
-- `@ai-sdk/*`: 2.0.0-beta series
+- `@vercel/postgres`: ^0.10.0
+- `@vercel/blob`: ^0.24.1
+- `postgres`: ^3.4.4
+- `redis`: ^5.0.0
+
+### Authentication & Security
+- `next-auth`: 5.0.0-beta.25
+- `bcrypt-ts`: ^5.0.2
+
+### Treasury-Specific
 - `@upstash/qstash`: ^2.8.1
 - `cron-validator`: ^1.4.0
+- `cronstrue`: ^3.1.0
 - `date-fns`: ^4.1.0
+- `zod`: ^3.25.68
 
-### Development Tools
+### UI & Components
+- `tailwindcss`: ^3.4.1
+- `@radix-ui/*`: Various components (alert-dialog, dropdown-menu, tabs, etc.)
+- `framer-motion`: ^11.3.19
+- `lucide-react`: ^0.446.0
+
+### Development & Tooling
 - `@biomejs/biome`: 1.9.4
 - `@playwright/test`: ^1.50.1
-- `typescript`: ^5.6.3
 - `drizzle-kit`: ^0.25.0
+- `eslint`: ^8.57.0
+- `tsx`: ^4.19.1
+
+### Observability
+- `@vercel/otel`: ^1.13.0
+- `@lmnr-ai/lmnr`: ^0.6.16 
+- `@opentelemetry/*`: Various packages for tracing
+
+### Text Processing & Editor
+- `prosemirror-*`: Multiple packages for rich text editing
+- `@codemirror/*`: Code editor components
+- `react-markdown`: ^9.0.1
+- `remark-gfm`: ^4.0.0
 
 ## Technical Achievements
 
 ### Revolutionary Architecture
-- **Chat-as-Rule-Storage**: Eliminates separate rule storage complexity
-- **AI-Powered Rule Processing**: Natural language to structured data conversion
-- **Comprehensive Validation**: Multiple layers of rule validation and conflict detection
-- **Real-Time Scheduling**: Production-ready QStash integration
+- **Chat-as-Rule-Storage**: Eliminates separate rule storage complexity through innovative database design
+- **AI-Powered Rule Processing**: Sophisticated natural language to structured data conversion with extensive examples
+- **Multi-Layer Validation**: Zod schema + business logic + cron validation + conflict detection
+- **Real-Time Scheduling**: Production-ready QStash integration with dual execution modes
+- **Dynamic Context Resolution**: Advanced data source mapping with real-time context awareness
+- **Secure Formula Evaluation**: Mathematical expression processing with injection prevention
 
 ### Production-Ready Components
-- **Professional queue management interface**
-- **Robust error handling** throughout the pipeline
-- **Type-safe** treasury operations
-- **Comprehensive testing** infrastructure
-- **Modern UI/UX** with professional styling
+- **Professional queue management interface** with real-time updates and status tracking
+- **Comprehensive UI component library** with 25+ shadcn/ui components
+- **Robust error handling** throughout the entire pipeline
+- **Type-safe treasury operations** with comprehensive TypeScript + Zod validation
+- **Advanced testing infrastructure** with Playwright E2E tests
+- **Modern responsive UI/UX** with professional styling and animations
+- **Real-time streaming responses** with resumable stream support
 
-## Notes
+### Advanced Treasury Features
+- **Sophisticated payment simulation** with treasury impact analysis
+- **Multi-payment type support** (simple, split, calculation, leftover, batch)
+- **Conditional execution logic** with before/after rule conditions
+- **Rich financial context** with realistic mockup data ecosystem
+- **Security-focused design** with user isolation and secure computation
 
-- **Innovative approach** to treasury rule management through chat integration
-- **Production-ready** scheduling and queue management system
-- **Comprehensive AI tooling** for treasury operations
-- **Rich development environment** with realistic mockup data
-- **Professional UI components** ready for production deployment
-- **Strong foundation** for Venly treasury API integration
-- **Scalable architecture** supporting future multi-tenant requirements
+## Current Development State
+
+### System Maturity: **Near-Production Ready**
+
+This treasury automation system represents a **highly sophisticated, enterprise-ready** solution with:
+
+- **Advanced AI Integration**: Natural language processing with multi-provider support
+- **Comprehensive Rule Engine**: Complete treasury automation with sophisticated validation
+- **Professional UI/UX**: Production-quality interface with real-time capabilities  
+- **Robust Architecture**: Chat-as-rule-storage innovation with strong type safety
+- **Rich Development Environment**: Extensive mockup data and testing infrastructure
+
+### Recent Changes (Per Git Status)
+- **Modified Files**: `app/api/rule/validate/route.ts`, `lib/utils/rule-simulation.ts` 
+- **Active Development**: Rule validation enhancements and simulation improvements
+- **Migration History**: 11 database migrations showing evolution from basic chat to sophisticated treasury system
+
+### Key Strengths
+1. **Revolutionary chat-based rule storage** eliminating traditional database complexity
+2. **AI-powered natural language processing** with extensive examples and patterns
+3. **Multi-layered validation system** ensuring rule integrity and business logic compliance
+4. **Production-ready scheduling** with QStash integration and professional queue management
+5. **Comprehensive simulation engine** providing treasury impact analysis
+6. **Security-focused design** with user isolation and secure formula evaluation
+7. **Modern technology stack** using latest Next.js, React, and AI SDK versions
+
+### Production Readiness Assessment
+- ✅ **Core Functionality**: Complete and sophisticated
+- ✅ **UI/UX**: Professional and responsive
+- ✅ **Database Design**: Advanced with proper migrations
+- ✅ **Testing**: Comprehensive E2E coverage
+- ⚠️ **Payment Integration**: Simulation-ready, awaiting real processor integration
+- ⚠️ **Webhook Infrastructure**: Development-ready (ngrok), needs production endpoints
 
 ---
 
-*Last Updated: July 21, 2025*
+*Last Updated: July 23, 2025*  
 *This file serves as the persistent memory for Claude across sessions, containing project context, conventions, and development guidelines.*

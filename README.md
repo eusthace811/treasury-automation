@@ -1,17 +1,16 @@
 <a href="https://chat.vercel.ai/">
   <img alt="Next.js 14 and App Router-ready AI chatbot." src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chat SDK</h1>
+  <h1 align="center">Treasury Automation Challenge</h1>
 </a>
 
 <p align="center">
-    Chat SDK is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+    The Treasury Automation Challenge is a real-time, AI-powered platform for conversational treasury operations—a fintech product that lets users create, manage, and simulate payment rules via chat. It integrates natural language processing, secure simulation, scheduled execution, and a dynamic financial context system.
 </p>
 
 <p align="center">
-  <a href="https://chat-sdk.dev"><strong>Read Docs</strong></a> ·
+  <a href="https://www.venly.io/"><strong>venly.io (Hacked this challenge)</strong></a> ·
   <a href="#features"><strong>Features</strong></a> ·
   <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
   <a href="#running-locally"><strong>Running locally</strong></a>
 </p>
 <br/>
@@ -29,34 +28,42 @@
   - Styling with [Tailwind CSS](https://tailwindcss.com)
   - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
 - Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
+  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history, rules and user data
+  - [Upstash Redis](https://vercel.com/marketplace/upstash) for context cache
+  - [Upstash QStash](https://upstash.com/docs/qstash/overall/getstarted) for efficient scheduling and queues
   - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
 - [Auth.js](https://authjs.dev)
   - Simple and secure authentication
 
 ## Model Providers
 
-This template ships with [xAI](https://x.ai) `grok-2-1212` as the default chat model. However, with the [AI SDK](https://sdk.vercel.ai/docs), you can switch LLM providers to [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://sdk.vercel.ai/providers/ai-sdk-providers) with just a few lines of code.
+This template ships with **OpenAI GPT-4.1 Mini** as the default chat model. However, models from **xAI** (`grok-2-1212`), **Anthropic Claude**, and **DeepSeek** are also implemented and can be used simply by changing the option in the `.env` file (not tested). Thanks to the [AI SDK](https://sdk.vercel.ai/docs), switching providers is seamless—just update your configuration without changing the code.
 
-## Deploy Your Own
-
-You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fai-chatbot&env=AUTH_SECRET&envDescription=Learn+more+about+how+to+get+the+API+Keys+for+the+application&envLink=https%3A%2F%2Fgithub.com%2Fvercel%2Fai-chatbot%2Fblob%2Fmain%2F.env.example&demo-title=AI+Chatbot&demo-description=An+Open-Source+AI+Chatbot+Template+Built+With+Next.js+and+the+AI+SDK+by+Vercel.&demo-url=https%3A%2F%2Fchat.vercel.ai&products=%5B%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22ai%22%2C%22productSlug%22%3A%22grok%22%2C%22integrationSlug%22%3A%22xai%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22neon%22%2C%22integrationSlug%22%3A%22neon%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22integrationSlug%22%3A%22upstash%22%7D%2C%7B%22type%22%3A%22blob%22%7D%5D)
 
 ## Running locally
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+You will need to use the environment variables [defined in `.env.example`](.env.example) to run the project. 
 
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
+> Note: You should not commit your `.env.local` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+To get started:
+
+1. **Clone the repository** and create a **Vercel project**.
+2. Set up infrastructure:
+   * **Neon PostgreSQL** for the database: [Neon Serverless Postgres](https://vercel.com/marketplace/neon).
+   * **Upstash Redis** for context caching: [Upstash Redis](https://vercel.com/marketplace/upstash).
+   * **Vercel Blob** for file storage: [Vercel Blob](https://vercel.com/docs/storage/vercel-blob).
+   > In fact, you can even write a payment rule on paper, upload the file, and ask the agent to process it.
+   * **Upstash QStash** for scheduled task execution and queues: [Upstash QStash](https://console.upstash.com/).
+3. (Optional) To use other AI models like **xAI**, **Anthropic Claude**, or **DeepSeek**, just switch the provider in your `.env` file.
+4. **IMPORTANT > For AI telemetry**, it's strongly required to create an account with [Laminar](https://laminar.ai) and obtain an API key to enable observability and insights into agent behavior.
+
+Once setup is complete, you can begin by running the following (ensure Node 22 and pnpm 9.12.3 are installed):
 
 ```bash
 pnpm install
+pnpm run db:migrate
 pnpm dev
 ```
 
-Your app template should now be running on [localhost:3000](http://localhost:3000).
+The application should now be running at [localhost:3000](http://localhost:3000).
