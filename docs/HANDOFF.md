@@ -63,6 +63,12 @@ If you're taking over the Treasury Automation project, here are the key areas to
 5. `lib/treasury/`
 6. `app/api/chat/`
 
+## 📌 Links
+
+1. [ARCHITECTURE.md](./ARCHITECTURE.md)
+2. [ONBOARDING.md](./ONBOARDING.md)
+3. [HANDOFF.md](./HANDOFF.md)
+
 ---
 
 Feel free to refactor this document as the codebase evolves.

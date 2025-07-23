@@ -76,4 +76,10 @@ pnpm dev
 
 * Walk through: parser → validator → simulator → test via chat UI
 
+## 📌 Links
+
+1. [ARCHITECTURE.md](./ARCHITECTURE.md)
+2. [ONBOARDING.md](./ONBOARDING.md)
+3. [HANDOFF.md](./HANDOFF.md)
+
 Welcome aboard!

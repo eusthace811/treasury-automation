@@ -261,6 +261,12 @@ We chose this to align with the conversational UX and simplify short-term implem
 
 ---
 
+## 📌 Links
+
+1. [ARCHITECTURE.md](./ARCHITECTURE.md)
+2. [ONBOARDING.md](./ONBOARDING.md)
+3. [HANDOFF.md](./HANDOFF.md)
+
 ## 🔁 Handoff & Next Steps
 
 See [HANDOFF.md](./HANDOFF.md) for what should be documented if this is handed off to another dev or team.
