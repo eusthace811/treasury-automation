@@ -142,7 +142,7 @@ Simulation outputs a detailed result — like a dry run — and is used in the U
 {
   payment: {
     action: "simple" | "split" | "batch" | "leftover" | "calculation",
-    source: "account-slug" or "wallet-address"
+    source: "account-slug" or "wallet-address",
     amount: { "source": "COLLECTION.FIELD", "formula": "* 0.1"}, // or fixed "amount": "1000",
     beneficiary: ["wallet1", "wallet2"] or ["COLLECTION"],
     currency: "USDC",
@@ -284,6 +284,7 @@ This project is built to be extensible. You can integrate real payment processor
 
 We chose this to align with the conversational UX and simplify short-term implementation.
 
+> Another trade-off (though I see it as a strength) is building on top of the Vercel AI Chatbot template. While opinionated, it significantly accelerated development. Starting from scratch would have required much more setup, especially for a tool-aware AI chat interface with all its moving parts.
 
 ## ⚠️ Known Issues
 
